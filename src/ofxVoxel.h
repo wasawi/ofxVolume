@@ -1,54 +1,13 @@
-/*
- //  ofxBox.h
- //  extended by Jordi Puig from ofxRectangle.h
- //	Created by zachary lieberman
- */
-
+//  ofxVoxel.h
+//  Created by Jordi.
 #pragma once
-
 #include "ofConstants.h"
 #include "ofPoint.h"
-#include "ofLog.h"
+#include "ofPixels.h"
 
 //----------------------------------------------------------
-// ofxBox
+// ofxVoxel
 //----------------------------------------------------------
-
-// ofxBox is a simple container for describing the position
-// and size of 3D boxes. Like many boxes data structures
-// found in other frameworks and graphics libraries, member
-// width and height variables can take negative values.
-// Additionally, x / y / z position and width / height / depth are publicly
-// accessible, resulting in great programming freedom.
-// Consequently, two visually identical boxes can be
-// represented in the following ways:
-//
-// ofxBox myRect(0,0,0,100,100,100);
-//
-// AND
-//
-// ofxBox myRect(100,100,100,-100,-100,-100);
-//
-// While both representations will yield the same visual
-// results in all openFrameworks renderers, the results of
-// some method operations that modify x / y / z  / width / height / depth
-// (such as scaling) produce mathematically corbox, but
-// visually different results for each of the above
-// representations.
-//
-// That said, most `getter` methods return the same results
-// for both "standardized" and "non-standardized" boxes.
-// Simply stated, the user must be aware of the differences
-// between these two visually equal but mathematically different
-// representations.
-//
-// To ensure consistent results, users are encouraged to make
-// sure boxes are "standardized" before using operations
-// that modify x / y / z / width / height / depth.
-//
-// "Standardized" boxes are boxes whose width >= 0 and
-// height >= 0.  The `void standardize()` method can be used
-// to ensure that the box is "standardized".
 
 class ofxBox {
 	
@@ -60,13 +19,13 @@ public:
 	ofxBox(const ofPoint& p, float w, float h, float d);
 	ofxBox(const ofPoint& p, const ofPoint& s);
 	ofxBox(const ofxBox& box);
-//	ofxBox(const ofPoint& p0, const ofPoint& p1);
+	//	ofxBox(const ofPoint& p0, const ofPoint& p1);
 	
 	void set(float px, float py, float pz, float sw, float sh, float sd);
 	void set(const ofPoint& p, float w, float h, float d);
 	void set(const ofxBox& box);
 	void set(const ofPoint& p, const ofPoint& s);
-//	void set(const ofPoint& p0, const ofPoint& p1);
+	//	void set(const ofPoint& p0, const ofPoint& p1);
 	
 	void setX(float px);
 	void setY(float py);

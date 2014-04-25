@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxGifEncoder.h"
 #include "ofxVolumetrics.h"
 #include "ofxVolume.h"
 
@@ -53,5 +54,5 @@ public:
 	float	boxW, boxH;
 
 	string date;
-	
+
 };

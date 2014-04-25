@@ -4,9 +4,10 @@
 void testApp::setup()
 {
 	ofSetLogLevel(OF_LOG_VERBOSE);
-    ofSetFrameRate(20);
+//    ofSetFrameRate(20);
+	ofSetVerticalSync(true);
 	ofSetupScreenOrtho();
-//	ofBackground(0,255,255);
+	ofBackground(40);
 	boxW	= boxH = 200;
 //	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	
@@ -18,7 +19,7 @@ void testApp::setup()
 	FBOq		= 1;
 	Zq			= 2;
 	thresh		= 0;
-	density		= 1;
+	density		= 10;
 	dithering	= 0;
 	linearFilter= true;
 	
@@ -28,10 +29,10 @@ void testApp::setup()
 	elevation		= -.50;
 
 //	cam.setFov(1);
-	blabels=true;
+	blabels = true;
 	
 	// Init Volume
-	volSize=ofVec3f(20);
+	volSize=ofVec3f(40);
 	initVolume();
 	
 	// Volume rendering
@@ -85,7 +86,7 @@ void testApp::update()
 //--------------------------------------------------------------
 void testApp::draw()
 {
-	ofBackgroundGradient(100, 50);
+//	ofBackgroundGradient(100, 50);
 
 	ofSetColor(255);
 	cam.begin();
@@ -94,6 +95,9 @@ void testApp::draw()
 	volumeRender.draw(0, ofGetHeight(), ofGetWidth(), -ofGetHeight());
 	
 	if (blabels) drawLabels();
+	
+//	ofDrawBox(<#float size#>)
+//	ofRectangle();
 }
 
 void testApp::onGifSaved(string &fileName) {
@@ -118,7 +122,7 @@ void testApp::keyPressed(int key)
 			date=ofGetTimestampString();
 //			gifEncoder.save(date+".gif");
             break;
-		case 'c':
+		case 'h':
 			blabels=!blabels;
 			break;
 		case 'f':
@@ -264,8 +268,12 @@ void testApp::drawLabels()
     ofRect(0,0,270,190);
     ofSetColor(255,255,255,255);
 	
-    ofDrawBitmapString("volume dimensions: " + ofToString(volumeRender.getVolumeWidth()) + "x" + ofToString(volumeRender.getVolumeHeight()) + "x" + ofToString(volumeRender.getVolumeDepth()) + "\n" +
-                       "FBO quality (q/Q): " + ofToString(volumeRender.getRenderWidth()) + "x" + ofToString(volumeRender.getRenderHeight()) + "\n" +
+    ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate())+ "\n" +
+					   "volume dimensions: " + ofToString(volumeRender.getVolumeWidth()) +
+					   "x" + ofToString(volumeRender.getVolumeHeight()) +
+					   "x" + ofToString(volumeRender.getVolumeDepth()) + "\n" +
+                       "FBO quality (q/Q): " + ofToString(volumeRender.getRenderWidth()) +
+					   "x" + ofToString(volumeRender.getRenderHeight()) + "\n" +
                        "Z quality (z/Z):	" + ofToString(volumeRender.getZQuality()) + "\n" +
                        "Threshold (t/T):	" + ofToString(volumeRender.getThreshold()) + "\n" +
                        "Density (d/D):		" + ofToString(volumeRender.getDensity()) + "\n" +
@@ -275,25 +283,22 @@ void testApp::drawLabels()
 					   "elevation:          " + ofToString(elevation)
 					   ,20,20);
 	
-	
 }
 
 //--------------------------------------------------------------
 void testApp::selectVoxels()
 {
-	vector<ofVec3f> positions;
-	vector<float>	radiuses;
+	vector<ofxBox> boxes;
 	
-	ofVec3f position	= ofVec3f(10, 10, 10);
-	float radius		= 0;
+	ofVec3f position	= ofVec3f(10);
+	ofVec3f size		= ofVec3f(3);
 	
-	cout << "point " << position << endl;
-	cout << "rad " << radius << endl;
+	ofxBox box(position, size);
+	boxes.push_back(box);
 	
-	positions.push_back(position);
-	radiuses.push_back(radius);
+//	ofRemove(position, false);
 	
-	volume.selectVoxels(positions, radiuses);
+	volume.selectVoxels(boxes);
 }
 
 

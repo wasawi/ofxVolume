@@ -4,10 +4,10 @@
 
 #pragma once
 #include "ofxImageSequencePlayer.h"
-#include "ofxGifEncoder.h"
+#include "ofxBox.h"
 
 //Volume Cutting Viepoint
-enum viewPoint
+enum slice
 {
 	CORONAL,	//	collar
 	SAGITTAL,	//	cresta
@@ -23,7 +23,7 @@ public:
 	void allocate(ofVec3f size);
 	void load(string path="");
 	void setup(float bW, float bH);
-	void redraw(viewPoint vP, int depth);
+	void redraw(slice vP, int depth);
 
 	
 	// Getters
@@ -38,10 +38,13 @@ public:
 	ofVec3f	getNormalizedCoords(ofVec3f _coord);
 	
 	
-	void draw(viewPoint vP);
+	void draw(slice vP);
 //	vector<unsigned char> selectVoxels(vector <ofVec3f> _coord, vector <float> radius);
-	void selectVoxels(vector <ofVec3f>& _coord, vector <float>& radius);
-	vector <ofVec3f> getVoxelsinBox(ofVec3f& _coord, ofVec3f& _size);
+	void clearSelected();
+	
+	void selectVoxels(vector <ofxBox>& boxes);
+	void selectVoxels(ofxBox& box);
+	vector <ofVec3f> getVoxelsinBox(ofxBox& box);
 //	void getVoxelsinBox(ofVec3f& _coord, ofVec3f& _size);
 	
 	unsigned char * voxels;
@@ -57,14 +60,7 @@ private:
 	bool inside(ofVec3f _coord);
 	
     ofxImageSequencePlayer imageSequence;
-
-
 	ofPixels myPixels;
-
-	int volWidth, volHeight, volDepth;
-	ofVec3f	volSize;
-	ofVec3f	volPos;
-
 	int renderWidth, renderHeight;
 	
 	/*
@@ -80,31 +76,49 @@ private:
 	float boxW;
 	float boxH;
 
-	// the depth of the current slice
+	int volWidth, volHeight, volDepth;
+	ofVec3f	volSize;
+	ofVec3f	volPos;
+	
+	ofxBox volBox; //the volume box, contains size, pos...
+	
+	// the depth of the current cutting plane
 	int coronalS;
 	int sagittalS;
 	int axialS;
 
-	// one image for eaxh point of view
+	// one image for each cutting plane
 	ofImage coronal;
 	ofImage sagittal;
 	ofImage axial;
 	
-	// one pixel array for each image
+	// one pixel array for cutting plane
 	ofPixels coronalPixels;
 	ofPixels sagittalPixels;
 	ofPixels axialPixels;
 	
-	ofColor lineColor;
-	
 	bool insideCoronal;
 	bool insideSagittal;
 	bool insideAxial;
-	
+
 	// quick ways of checking if inside radius:
 	// http://stackoverflow.com/questions/481144/equation-for-testing-if-a-point-is-inside-a-circle
 	
-	
 	vector<ofPixels> selectedVoxels;
-	
+	ofImage ata;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
