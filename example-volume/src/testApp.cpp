@@ -42,6 +42,15 @@ void testApp::setup()
     cam.setDistance(30000);
     cam.setDistance(1000);
     cam.enableMouseInput();
+
+
+/*	v.setPosition(ofPoint(1));
+	v.setSize(ofPoint(1));
+	cout << "v.pix.size = "<< v.pix.size()<< endl;
+	cout << "v.pix.isAllocated = "<< v.pix.isAllocated()<< endl;
+	cout << "v = "<< v << endl;
+//	cout << "v.pix.isAllocated = "<< v.getBitsPerPixel()<< endl;
+*/
 }
 
 //--------------------------------------------------------------

@@ -11,7 +11,7 @@
 		082001D418EDFAC200E5C389 /* ofxVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 082001D218EDFAC200E5C389 /* ofxVolume.cpp */; };
 		082001E018EE29DC00E5C389 /* ofxGifEncoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 082001DE18EE29DC00E5C389 /* ofxGifEncoder.cpp */; };
 		0863CCA518EF18AD0016D0CF /* ofxBox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0863CCA318EF18AD0016D0CF /* ofxBox.cpp */; };
-		08F1B20419071063001EC01D /* ofxVoxel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08F1B20219071063001EC01D /* ofxVoxel.cpp */; };
+		08DEC6FD190C4F8600995348 /* ofxVoxels.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08DEC6FB190C4F8600995348 /* ofxVoxels.cpp */; };
 		202B3D901E332A2CAF54256D /* ofxTexture3d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE68D117096A7022E761A462 /* ofxTexture3d.cpp */; };
 		29D734F0DDECC8C5978185D7 /* testApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00A1BFCBB38848AD0E0C8539 /* testApp.cpp */; };
 		7A5DDC993979FB5561F47EFE /* ofxVolumetrics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F3B23A025216F41A92D52B26 /* ofxVolumetrics.cpp */; };
@@ -77,8 +77,8 @@
 		082001DF18EE29DC00E5C389 /* ofxGifEncoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxGifEncoder.h; sourceTree = "<group>"; };
 		0863CCA318EF18AD0016D0CF /* ofxBox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxBox.cpp; sourceTree = "<group>"; };
 		0863CCA418EF18AD0016D0CF /* ofxBox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxBox.h; sourceTree = "<group>"; };
-		08F1B20219071063001EC01D /* ofxVoxel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxVoxel.cpp; sourceTree = "<group>"; };
-		08F1B20319071063001EC01D /* ofxVoxel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxVoxel.h; sourceTree = "<group>"; };
+		08DEC6FB190C4F8600995348 /* ofxVoxels.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxVoxels.cpp; sourceTree = "<group>"; };
+		08DEC6FC190C4F8600995348 /* ofxVoxels.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxVoxels.h; sourceTree = "<group>"; };
 		0DE82F34CE3C7E76904AEB80 /* Ray.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = Ray.h; path = ../../../addons/ofxRay/src/ofxRay/Ray.h; sourceTree = SOURCE_ROOT; };
 		13120E09450F7293A154AEE1 /* Projector.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Projector.cpp; path = ../../../addons/ofxRay/src/ofxRay/Projector.cpp; sourceTree = SOURCE_ROOT; };
 		2D129AB0F7D46B8DFCEADEDB /* testApp.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = testApp.h; path = src/testApp.h; sourceTree = SOURCE_ROOT; };
@@ -157,12 +157,12 @@
 		082001D118EDFAC200E5C389 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				08DEC6FB190C4F8600995348 /* ofxVoxels.cpp */,
+				08DEC6FC190C4F8600995348 /* ofxVoxels.h */,
 				082001D218EDFAC200E5C389 /* ofxVolume.cpp */,
 				082001D318EDFAC200E5C389 /* ofxVolume.h */,
 				0863CCA318EF18AD0016D0CF /* ofxBox.cpp */,
 				0863CCA418EF18AD0016D0CF /* ofxBox.h */,
-				08F1B20219071063001EC01D /* ofxVoxel.cpp */,
-				08F1B20319071063001EC01D /* ofxVoxel.h */,
 			);
 			name = src;
 			path = ../src;
@@ -420,8 +420,8 @@
 				29D734F0DDECC8C5978185D7 /* testApp.cpp in Sources */,
 				202B3D901E332A2CAF54256D /* ofxTexture3d.cpp in Sources */,
 				7A5DDC993979FB5561F47EFE /* ofxVolumetrics.cpp in Sources */,
+				08DEC6FD190C4F8600995348 /* ofxVoxels.cpp in Sources */,
 				A0C1C42F6293BEC48CA02D5D /* Base.cpp in Sources */,
-				08F1B20419071063001EC01D /* ofxVoxel.cpp in Sources */,
 				DF2B08505F60BABD6D71FD96 /* Camera.cpp in Sources */,
 				9ABE161F13B1E8B87B7C04F9 /* Plane.cpp in Sources */,
 				DE51E964916E52B1AB50BB5F /* Projector.cpp in Sources */,

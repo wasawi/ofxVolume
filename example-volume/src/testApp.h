@@ -4,6 +4,7 @@
 #include "ofxGifEncoder.h"
 #include "ofxVolumetrics.h"
 #include "ofxVolume.h"
+#include "ofxVoxel.h"
 
 class testApp : public ofBaseApp
 {
@@ -53,6 +54,6 @@ public:
 
 	float	boxW, boxH;
 
-	string date;
-
+	string		date;
+	ofxVoxel	v;
 };

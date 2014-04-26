@@ -4,30 +4,31 @@
 #include "ofConstants.h"
 #include "ofPoint.h"
 #include "ofPixels.h"
+#include "ofxBox.h"
 
 //----------------------------------------------------------
 // ofxVoxel
 //----------------------------------------------------------
 
-class ofxBox {
+class ofxVoxel : public ofxBox{
 	
 public:
+
+	ofxVoxel();
+	virtual ~ofxVoxel();
 	
-	ofxBox();
-	virtual ~ofxBox();
-	ofxBox(float px, float py, float pz, float sw, float sh, float sd);
-	ofxBox(const ofPoint& p, float w, float h, float d);
-	ofxBox(const ofPoint& p, const ofPoint& s);
-	ofxBox(const ofxBox& box);
+	ofPixels pix;
+	
+	/*	ofxVoxel(const ofxVoxel& box, ofPixels pix);
 	//	ofxBox(const ofPoint& p0, const ofPoint& p1);
 	
-	void set(float px, float py, float pz, float sw, float sh, float sd);
+/*	void set(float px, float py, float pz, float sw, float sh, float sd);
 	void set(const ofPoint& p, float w, float h, float d);
 	void set(const ofxBox& box);
 	void set(const ofPoint& p, const ofPoint& s);
 	//	void set(const ofPoint& p0, const ofPoint& p1);
 	
-	void setX(float px);
+/*	void setX(float px);
 	void setY(float py);
 	void setZ(float pz);
 	
@@ -62,56 +63,7 @@ public:
 	void scaleFromCenter(float s);
 	void scaleFromCenter(float sX, float sY, float sZ);
 	void scaleFromCenter(const ofPoint& s);
-	/*
-	 void scaleTo(const ofxBox& targetRect,
-	 ofScaleMode scaleMode = OF_SCALEMODE_FIT);
-	 
-	 void scaleTo(const ofxBox& targetRect,
-	 ofAspectRatioMode subjectAspectRatioMode,
-	 ofAlignHorz sharedHorzAnchor = OF_ALIGN_HORZ_CENTER,
-	 ofAlignVert sharedVertAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void scaleTo(const ofxBox& targetRect,
-	 ofAspectRatioMode subjectAspectRatioMode,
-	 ofAlignHorz modelHorzAnchor,
-	 ofAlignVert modelVertAnchor,
-	 ofAlignHorz subjectHorzAnchor,
-	 ofAlignVert subjectVertAnchor);
-	 
-	 void alignToHorz(const float& targetX,
-	 ofAlignHorz thisHorzAnchor = OF_ALIGN_HORZ_CENTER);
-	 
-	 void alignToHorz(const ofxBox& targetRect,
-	 ofAlignHorz sharedAnchor = OF_ALIGN_HORZ_CENTER);
-	 
-	 void alignToHorz(const ofxBox& targetRect,
-	 ofAlignHorz targetHorzAnchor,
-	 ofAlignHorz thisHorzAnchor);
-	 
-	 void alignToVert(const float& targetY,
-	 ofAlignVert sharedAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void alignToVert(const ofxBox& targetRect,
-	 ofAlignVert sharedAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void alignToVert(const ofxBox& targetRect,
-	 ofAlignVert targetVertAnchor,
-	 ofAlignVert thisVertAnchor);
-	 
-	 void alignTo(const ofPoint& targetPoint,
-	 ofAlignHorz thisHorzAnchor = OF_ALIGN_HORZ_CENTER,
-	 ofAlignVert thisVertAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void alignTo(const ofxBox& targetRect,
-	 ofAlignHorz sharedHorzAnchor = OF_ALIGN_HORZ_CENTER,
-	 ofAlignVert sharedVertAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void alignTo(const ofxBox& targetRect,
-	 ofAlignHorz targetHorzAnchor,
-	 ofAlignVert targetVertAnchor,
-	 ofAlignHorz thisHorzAnchor,
-	 ofAlignVert thisVertAnchor);
-	 */
+
 	bool inside(float px, float py, float pz) const;
 	bool inside(const ofPoint& p) const;
 	bool inside(const ofxBox& box) const;
@@ -156,11 +108,6 @@ public:
 	float getFront()  const;
 	float getBack()   const;
 	
-	/*	ofPoint getTopLeft() const;
-	 ofPoint getTopRight() const;
-	 ofPoint getBottomLeft() const;
-	 ofPoint getBottomRight() const;
-	 */
 	float getHorzAnchor(ofAlignHorz anchor) const;
 	float getVertAnchor(ofAlignVert anchor) const;
 	
@@ -193,8 +140,7 @@ public:
 	float& w;
 	float& h;
 	float& d;
+*/
+	
 };
-
-ostream& operator<<(ostream& os, const ofxBox& box);
-istream& operator>>(istream& is, ofxBox& box);
 

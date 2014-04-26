@@ -244,198 +244,6 @@ void ofxBox::scaleFromCenter(const ofPoint& s) {
 	d = newDepth;
 }
 
-/* //TODO
- //----------------------------------------------------------
- void ofxBox::scaleTo(const ofxBox& targetRect,
- ofScaleMode scaleMode) {
- 
- if(scaleMode == OF_SCALEMODE_FIT) {
- scaleTo(targetRect,
- OF_ASPECT_RATIO_KEEP,
- OF_ALIGN_HORZ_CENTER,
- OF_ALIGN_VERT_CENTER);
- } else if(scaleMode == OF_SCALEMODE_FILL) {
- scaleTo(targetRect,
- OF_ASPECT_RATIO_KEEP_BY_EXPANDING,
- OF_ALIGN_HORZ_CENTER,
- OF_ALIGN_VERT_CENTER);
- } else if(scaleMode == OF_SCALEMODE_CENTER) {
- alignTo(targetRect,
- OF_ALIGN_HORZ_CENTER,
- OF_ALIGN_VERT_CENTER);
- } else if(scaleMode == OF_SCALEMODE_STRETCH_TO_FILL) {
- scaleTo(targetRect,
- OF_ASPECT_RATIO_IGNORE,
- OF_ALIGN_HORZ_CENTER,
- OF_ALIGN_VERT_CENTER);
- } else {
- scaleTo(targetRect,
- OF_ASPECT_RATIO_KEEP);
- }
- 
- }
- 
- //----------------------------------------------------------
- void ofxBox::scaleTo(const ofxBox& targetRect,
- ofAspectRatioMode subjectAspectRatioMode,
- ofAlignHorz sharedHorzAnchor,
- ofAlignVert sharedVertAnchor) {
- scaleTo(targetRect,
- subjectAspectRatioMode,
- sharedHorzAnchor,
- sharedVertAnchor,
- sharedHorzAnchor,
- sharedVertAnchor);
- }
- 
- //----------------------------------------------------------
- void ofxBox::scaleTo(const ofxBox& targetRect,
- ofAspectRatioMode aspectRatioMode,
- ofAlignHorz modelHorzAnchor,
- ofAlignVert modelVertAnchor,
- ofAlignHorz thisHorzAnchor,
- ofAlignVert thisVertAnchor) {
- 
- float tw = targetRect.getWidth();	// target w
- float th = targetRect.getHeight();   // target h
- float sw = getWidth();   // subject w
- float sh = getHeight();  // subject h
- 
- if(aspectRatioMode == OF_ASPECT_RATIO_KEEP_BY_EXPANDING ||
- aspectRatioMode == OF_ASPECT_RATIO_KEEP) {
- if(fabs(sw) >= FLT_EPSILON || fabs(sh) >= FLT_EPSILON) {
- float wRatio = fabs(tw) / fabs(sw);
- float hRatio = fabs(th) / fabs(sh);
- if(aspectRatioMode == OF_ASPECT_RATIO_KEEP_BY_EXPANDING) {
- scale(MAX(wRatio,hRatio));
- } else if(aspectRatioMode == OF_ASPECT_RATIO_KEEP) {
- scale(MIN(wRatio,hRatio));
- }
- } else {
- ofLogWarning("ofxBox") << "scaleTo(): no scaling applied to avoid divide by zero, box has 0 w and/or h: " << sw << "x" << sh;
- }
- } else if(aspectRatioMode == OF_ASPECT_RATIO_IGNORE) {
- w  = tw;
- h = th;
- } else {
- ofLogWarning("ofxBox") << "scaleTo(): unknown ofAspectRatioMode = " << aspectRatioMode << ", using OF_ASPECT_RATIO_IGNORE";
- w  = tw;
- h = th;
- }
- 
- // now align if anchors are not ignored.
- alignTo(targetRect,
- modelHorzAnchor,
- modelVertAnchor,
- thisHorzAnchor,
- thisVertAnchor);
- }
- 
- //----------------------------------------------------------
- void ofxBox::alignToHorz(const float& targetX,
- ofAlignHorz thisHorzAnchor) {
- 
- if(thisHorzAnchor != OF_ALIGN_HORZ_IGNORE) {
- translateX(targetX - getHorzAnchor(thisHorzAnchor));
- } else {
- ofLogVerbose("ofxBox") << "alignToHorz(): thisHorzAnchor == OF_ALIGN_HORZ_IGNORE, no alignment applied";
- }
- }
- 
- //----------------------------------------------------------
- void ofxBox::alignToHorz(const ofxBox& targetRect,
- ofAlignHorz sharedAnchor) {
- 
- alignToHorz(targetRect, sharedAnchor, sharedAnchor);
- }
- 
- //----------------------------------------------------------
- void ofxBox::alignToHorz(const ofxBox& targetRect,
- ofAlignHorz targetHorzAnchor,
- ofAlignHorz thisHorzAnchor) {
- 
- if(targetHorzAnchor != OF_ALIGN_HORZ_IGNORE &&
- thisHorzAnchor   != OF_ALIGN_HORZ_IGNORE) {
- alignToHorz(targetRect.getHorzAnchor(targetHorzAnchor),thisHorzAnchor);
- } else {
- if(targetHorzAnchor == OF_ALIGN_HORZ_IGNORE) {
- ofLogVerbose("ofxBox") << "alignToHorz(): targetHorzAnchor == OF_ALIGN_HORZ_IGNORE, no alignment applied";
- } else {
- ofLogVerbose("ofxBox") << "alignToHorz(): thisHorzAnchor == OF_ALIGN_HORZ_IGNORE, no alignment applied";
- }
- }
- 
- }
- 
- //----------------------------------------------------------
- void ofxBox::alignToVert(const float& targetY,
- ofAlignVert thisVertAnchor) {
- 
- if(thisVertAnchor != OF_ALIGN_VERT_IGNORE) {
- translateY(targetY - getVertAnchor(thisVertAnchor));
- } else {
- ofLogVerbose("ofxBox") << "alignToVert(): thisVertAnchor == OF_ALIGN_VERT_IGNORE, no alignment applied";
- }
- }
- 
- //----------------------------------------------------------
- void ofxBox::alignToVert(const ofxBox& targetRect,
- ofAlignVert sharedAnchor) {
- 
- alignToVert(targetRect,sharedAnchor,sharedAnchor);
- }
- 
- //----------------------------------------------------------
- void ofxBox::alignToVert(const ofxBox& targetRect,
- ofAlignVert targetVertAnchor,
- ofAlignVert thisVertAnchor) {
- 
- if(targetVertAnchor != OF_ALIGN_VERT_IGNORE &&
- thisVertAnchor   != OF_ALIGN_VERT_IGNORE) {
- alignToVert(targetRect.getVertAnchor(targetVertAnchor),thisVertAnchor);
- } else {
- if(targetVertAnchor == OF_ALIGN_VERT_IGNORE) {
- ofLogVerbose("ofxBox") << "alignToVert(): targetVertAnchor == OF_ALIGN_VERT_IGNORE, no alignment applied";
- } else {
- ofLogVerbose("ofxBox") << "alignToVert(): thisVertAnchor == OF_ALIGN_VERT_IGNORE, no alignment applied";
- }
- 
- }
- }
- 
- //----------------------------------------------------------
- void ofxBox::alignTo(const ofPoint& targetPoint,
- ofAlignHorz thisHorzAnchor,
- ofAlignVert thisVertAnchor) {
- 
- alignToHorz(targetPoint.x, thisHorzAnchor);
- alignToVert(targetPoint.y, thisVertAnchor);
- }
- 
- 
- //----------------------------------------------------------
- void ofxBox::alignTo(const ofxBox& targetRect,
- ofAlignHorz sharedHorzAnchor,
- ofAlignVert sharedVertAnchor) {
- alignTo(targetRect,
- sharedHorzAnchor,
- sharedVertAnchor,
- sharedHorzAnchor,
- sharedVertAnchor);
- }
- 
- //----------------------------------------------------------
- void ofxBox::alignTo(const ofxBox& targetRect,
- ofAlignHorz targetHorzAnchor,
- ofAlignVert targetVertAnchor,
- ofAlignHorz thisHorzAnchor,
- ofAlignVert thisVertAnchor) {
- 
- alignToHorz(targetRect,targetHorzAnchor,thisHorzAnchor);
- alignToVert(targetRect,targetVertAnchor,thisVertAnchor);
- }
- */
-
 //----------------------------------------------------------
 bool ofxBox::inside(float px, float py, float pz) const {
 	return inside(ofPoint(px,py,pz));
@@ -728,12 +536,6 @@ float ofxBox::getBack() const {
  */
 
 //----------------------------------------------------------
-bool ofxBox::operator != (const ofxBox& box) const {
-	return	(x != box.x) || (y != box.y) || (z != box.z) ||
-	(w != box.w) || (h != box.h) || (d != box.d);
-}
-
-//----------------------------------------------------------
 ofPoint ofxBox::getPosition() const {
 	return position;
 }
@@ -799,6 +601,12 @@ ofxBox ofxBox::operator + (const ofPoint & point){
 bool ofxBox::operator == (const ofxBox& box) const {
 	return	(x == box.x) && (y == box.y) && (z == box.z) &&
 	(w == box.w) && (h == box.h) && (d == box.d);
+}
+
+//----------------------------------------------------------
+bool ofxBox::operator != (const ofxBox& box) const {
+	return	(x != box.x) || (y != box.y) || (z != box.z) ||
+	(w != box.w) || (h != box.h) || (d != box.d);
 }
 
 //----------------------------------------------------------

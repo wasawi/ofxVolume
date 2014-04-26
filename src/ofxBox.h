@@ -103,56 +103,7 @@ public:
 	void scaleFromCenter(float s);
 	void scaleFromCenter(float sX, float sY, float sZ);
 	void scaleFromCenter(const ofPoint& s);
-	/*
-	 void scaleTo(const ofxBox& targetRect,
-	 ofScaleMode scaleMode = OF_SCALEMODE_FIT);
-	 
-	 void scaleTo(const ofxBox& targetRect,
-	 ofAspectRatioMode subjectAspectRatioMode,
-	 ofAlignHorz sharedHorzAnchor = OF_ALIGN_HORZ_CENTER,
-	 ofAlignVert sharedVertAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void scaleTo(const ofxBox& targetRect,
-	 ofAspectRatioMode subjectAspectRatioMode,
-	 ofAlignHorz modelHorzAnchor,
-	 ofAlignVert modelVertAnchor,
-	 ofAlignHorz subjectHorzAnchor,
-	 ofAlignVert subjectVertAnchor);
-	 
-	 void alignToHorz(const float& targetX,
-	 ofAlignHorz thisHorzAnchor = OF_ALIGN_HORZ_CENTER);
-	 
-	 void alignToHorz(const ofxBox& targetRect,
-	 ofAlignHorz sharedAnchor = OF_ALIGN_HORZ_CENTER);
-	 
-	 void alignToHorz(const ofxBox& targetRect,
-	 ofAlignHorz targetHorzAnchor,
-	 ofAlignHorz thisHorzAnchor);
-	 
-	 void alignToVert(const float& targetY,
-	 ofAlignVert sharedAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void alignToVert(const ofxBox& targetRect,
-	 ofAlignVert sharedAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void alignToVert(const ofxBox& targetRect,
-	 ofAlignVert targetVertAnchor,
-	 ofAlignVert thisVertAnchor);
-	 
-	 void alignTo(const ofPoint& targetPoint,
-	 ofAlignHorz thisHorzAnchor = OF_ALIGN_HORZ_CENTER,
-	 ofAlignVert thisVertAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void alignTo(const ofxBox& targetRect,
-	 ofAlignHorz sharedHorzAnchor = OF_ALIGN_HORZ_CENTER,
-	 ofAlignVert sharedVertAnchor = OF_ALIGN_VERT_CENTER);
-	 
-	 void alignTo(const ofxBox& targetRect,
-	 ofAlignHorz targetHorzAnchor,
-	 ofAlignVert targetVertAnchor,
-	 ofAlignHorz thisHorzAnchor,
-	 ofAlignVert thisVertAnchor);
-	 */
+
 	bool inside(float px, float py, float pz) const;
 	bool inside(const ofPoint& p) const;
 	bool inside(const ofxBox& box) const;
@@ -201,9 +152,10 @@ public:
 	 ofPoint getTopRight() const;
 	 ofPoint getBottomLeft() const;
 	 ofPoint getBottomRight() const;
-	 */
+
 	float getHorzAnchor(ofAlignHorz anchor) const;
 	float getVertAnchor(ofAlignVert anchor) const;
+	 */
 	
 	ofPoint  getPosition() const;
 	ofPoint& getPositionRef();
