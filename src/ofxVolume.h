@@ -27,24 +27,24 @@ public:
 	void destroy();
 	
 	// Getters
-//	ofVec3f getSize();
-//	ofVec3f getPos();
+//	ofxPoint getSize();
+//	ofxPoint getPos();
 	
 	int getVoxelValue();
 	int getVoxelNumber();
-	ofVec3f getVoxelCoordinates(int _index);
-	bool getVoxelCoordAndVal(int _index, ofVec3f& _coord, int& _val);
-	ofVec3f	getNormalizedCoords(ofVec3f _coord);
+	ofxPoint getVoxelCoordinates(int _index);
+	bool getVoxelCoordAndVal(int _index, ofxPoint& _coord, int& _val);
+	ofxPoint	getNormalizedCoords(ofxPoint _coord);
 	
 	
 	void draw(slice vP);
-//	vector<unsigned char> selectVoxels(vector <ofVec3f> _coord, vector <float> radius);
+//	vector<unsigned char> selectVoxels(vector <ofxPoint> _coord, vector <float> radius);
 	void clearSelected();
 	
 	void selectVoxels(vector <ofxBox>& boxes);
 	void selectVoxels(ofxBox& box);
-	vector <ofVec3f> getVoxelsinBox(ofxBox& box);
-//	void getVoxelsinBox(ofVec3f& _coord, ofVec3f& _size);
+	vector <ofxPoint> getVoxelsinBox(ofxBox& box);
+//	void getVoxelsinBox(ofxPoint& _coord, ofxPoint& _size);
 		
 protected:
 private:
@@ -55,8 +55,8 @@ private:
 
 	ofxBox outerBox; //the box outside the volume useful if volume is non symetrical and you nedd a symetrical box to handle gui or others..
 	
-	vector <ofVec3f> getVoxelsinRadius(ofVec3f& _coord, float& _radius);
-	bool inside(ofVec3f _coord);
+	vector <ofxPoint> getVoxelsinRadius(ofxPoint& _coord, float& _radius);
+	bool inside(ofxPoint _coord);
 	
 	int w,h,d;
 	int renderWidth, renderHeight;

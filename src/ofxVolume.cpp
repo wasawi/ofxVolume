@@ -99,9 +99,9 @@ int ofxVolume::getVoxelValue()
 }
 
 //--------------------------------------------------------------
-ofVec3f ofxVolume::getVoxelCoordinates(int _index)
+ofxPoint ofxVolume::getVoxelCoordinates(int _index)
 {
-	ofVec3f value (0);
+	ofxPoint value (0);
 	for(int z=0; z<d; z++){
 		value.z=z;
 		if (z==axialS){
@@ -116,7 +116,7 @@ ofVec3f ofxVolume::getVoxelCoordinates(int _index)
 						int i = x + line + page;
 
 						if (_index==i){
-							value= ofVec3f(x,y,z);
+							value= ofxPoint(x,y,z);
 							ofLogVerbose("ofxVolume") << "voxelCoordinates= " << value;
 							return value;
 						}
@@ -128,9 +128,9 @@ ofVec3f ofxVolume::getVoxelCoordinates(int _index)
 }
 
 //--------------------------------------------------------------
-bool ofxVolume::getVoxelCoordAndVal(int _index, ofVec3f& _coord, int& _val){
+bool ofxVolume::getVoxelCoordAndVal(int _index, ofxPoint& _coord, int& _val){
 	
-	ofVec3f value(0);
+	ofxPoint value(0);
 	int row=0;
 	int page=0;
 	int index=0;
@@ -149,7 +149,7 @@ bool ofxVolume::getVoxelCoordAndVal(int _index, ofVec3f& _coord, int& _val){
 				index = x + row + page;
 				
 				if (_index==index){
-					value= ofVec3f(x,y,z);
+					value= ofxPoint(x,y,z);
 
 					_coord= value;
 					_val= getVoxels()[index];
@@ -334,11 +334,11 @@ void ofxVolume::redrawAxial()
 
 /*
 //--------------------------------------------------------------
-ofVec3f ofxVolume::getSize(){
+ofxPoint ofxVolume::getSize(){
 	return this->size;
 }
 //--------------------------------------------------------------
-ofVec3f ofxVolume::getPos(){
+ofxPoint ofxVolume::getPos(){
 	return this->position;
 }
 */
@@ -367,22 +367,22 @@ void ofxVolume::selectVoxels(vector <ofxBox>& boxes){
 	for(int i=0; i<boxes.size(); i++){
 //		cout << "size = "<< boxes[i].size<<endl;
 //		getVoxelsinRadius(_coord[i], _radius[i]);
-		vector <ofVec3f> outputVoxels;
+		vector <ofxPoint> outputVoxels;
 		outputVoxels = getVoxelsinBox(boxes[i]);
 	}
 }
 //--------------------------------------------------------------
-vector <ofVec3f> ofxVolume::getVoxelsinBox(ofxBox& box){
+vector <ofxPoint> ofxVolume::getVoxelsinBox(ofxBox& box){
 	
-	vector <ofVec3f> outputVoxels;
+	vector <ofxPoint> outputVoxels;
 	
-	if (box.size==ofVec3f(0)){
+	if (box.size==ofxPoint(0)){
 		outputVoxels.push_back(box.position);
 		return outputVoxels;
 		cout << box.position<< " dintre \n";
 	}
 
-	ofVec3f pointer	(0);
+	ofxPoint pointer	(0);
 	for(int z=0; z<box.d*2; z++){
 		for(int y=0; y<box.h*2; y++){
 			for(int x=0; x< box.w*2; x++){
@@ -397,12 +397,12 @@ vector <ofVec3f> ofxVolume::getVoxelsinBox(ofxBox& box){
 	return outputVoxels;
 }
 
-vector <ofVec3f> ofxVolume::getVoxelsinRadius(ofVec3f& _coord, float& _radius){
+vector <ofxPoint> ofxVolume::getVoxelsinRadius(ofxPoint& _coord, float& _radius){
 
-	vector <ofVec3f> outputVoxels;
+	vector <ofxPoint> outputVoxels;
 	outputVoxels.push_back(_coord);
 	
-	ofVec3f coord	(0);
+	ofxPoint coord	(0);
 	int row			=0;
 	int page		=0;
 	int index		=0;
@@ -423,7 +423,7 @@ vector <ofVec3f> ofxVolume::getVoxelsinRadius(ofVec3f& _coord, float& _radius){
 							page = z*w*h;
 							index = x + row + page;
 							
-							coord= ofVec3f(x,y,z);
+							coord= ofxPoint(x,y,z);
 //							value= voxels[index];
 							ofLogVerbose("ofxVolume") << "voxelCoord= " << coord;
 //							ofLogVerbose("ofxVolume") << "voxelVal= " << value;
@@ -449,7 +449,7 @@ vector <ofVec3f> ofxVolume::getVoxelsinRadius(ofVec3f& _coord, float& _radius){
 
 
 
-bool ofxVolume::inside(ofVec3f _coord){
+bool ofxVolume::inside(ofxPoint _coord){
 	
 	if (_coord.x<0) return false;
 	if (_coord.y<0) return false;
@@ -463,7 +463,7 @@ bool ofxVolume::inside(ofVec3f _coord){
 }
 
 
-ofVec3f ofxVolume::getNormalizedCoords(ofVec3f _coord){
+ofxPoint ofxVolume::getNormalizedCoords(ofxPoint _coord){
 	
 	
 }

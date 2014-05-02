@@ -1,4 +1,0 @@
-ofxVolumetrics
-addons
-ofxRay
-ofxVolume
