@@ -405,7 +405,10 @@ float ofxBox::getArea() const {
 				   fabs(h) * fabs(d) +
 				   fabs(w) * fabs(d));
 }
-
+//----------------------------------------------------------
+float ofxBox::getPerimeter() const {
+    return 4.0f * fabs(w) + 4.0f * fabs(h) + 4.0f * fabs(d);
+}
 //----------------------------------------------------------
 float ofxBox::getVolume() const {
 	return fabs(w) * fabs(h) * fabs(d);

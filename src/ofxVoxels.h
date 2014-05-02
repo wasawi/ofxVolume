@@ -5,13 +5,21 @@
 #include "ofColor.h"
 #include "ofMath.h"
 #include <limits>
+#include "ofxBox.h"
 
-//---------------------------------------
-enum ofInterpolationMethod {
-	OF_INTERPOLATE_NEAREST_NEIGHBOR =1,
-	OF_INTERPOLATE_BILINEAR			=2,
-	OF_INTERPOLATE_BICUBIC			=3
-};
+/*
+ Sometimes when looping throug a volume i use some terminology:
+ rows	= across width, x axis
+ columns = across height, y axis
+ pages	= across depth, z axis
+ ---
+ where in ofPixels was used some terms (mirror, rotate..) here we use following:
+ ofPixels:		ofVolume:
+ horizontal	=	_width
+ vertical	=	_height
+ (none)		=	_depth
+ */
+
 
 template <typename PixelType>
 class ofxVoxels_ {
@@ -28,44 +36,44 @@ public:
 	template<typename SrcType>
 	ofxVoxels_<PixelType>& operator=(const ofxVoxels_<SrcType> & mom);
 
-	void allocate(int w, int h, int channels);
-	void allocate(int w, int h, ofPixelFormat type);
-	void allocate(int w, int h, ofImageType type);
+	void allocate(ofxBox box, int channels);
+	void allocate(ofVec3f size, int channels);
+	void allocate(ofVec3f size, ofPixelFormat type);
+	void allocate(int w, int h, int d, int channels);
+	void allocate(int w, int h, int d, ofPixelFormat type);
+	void allocate(int w, int h, int d, ofImageType type);
 
-	void set(PixelType val);
-	void set(int channel,PixelType val);
-	void setFromPixels(const PixelType * newPixels, int w, int h, int channels);
-	void setFromPixels(const PixelType * newPixels, int w, int h, ofImageType type);
-	void setFromExternalPixels(PixelType * newPixels, int w, int h, int channels);
-	void setFromAlignedPixels(const PixelType * newPixels, int width, int height, int channels, int stride);
+	void setAll(PixelType val);
+	void setAll(int channel,PixelType val);
+	void setFromVoxels(const PixelType * newVoxels, int w, int h, int d, int channels);
+	void setFromVoxels(const PixelType * newVoxels, int w, int h, int d, ofImageType type);
+	void setFromExternalVoxels(PixelType * newVoxels, int w, int h, int d, int channels);
+	void setFromAlignedVoxels(const PixelType * newVoxels, int w, int h, int d, int channels, int stride);
 	void swap(ofxVoxels_<PixelType> & pix);
 
 	//From ofxVoxelsUtils
 	// crop to a new width and height, this reallocates memory.
-	void crop(int x, int y, int width, int height);
+	void crop(int x, int y, int z, int w, int h, int d);
 	// not in place
-	
-	void cropTo(ofxVoxels_<PixelType> &toPix, int x, int y, int _width, int _height);
-
-	// crop to a new width and height, this reallocates memory.
+	void cropTo(ofxVoxels_<PixelType> &toPix, int x, int y, int z, int w, int h, int d);
 	void rotate90(int nClockwiseRotations);
 	void rotate90To(ofxVoxels_<PixelType> & dst, int nClockwiseRotations);
-	void mirrorTo(ofxVoxels_<PixelType> & dst, bool vertically, bool horizontal);
-	void mirror(bool vertically, bool horizontal);
-	bool resize(int dstWidth, int dstHeight, ofInterpolationMethod interpMethod=OF_INTERPOLATE_NEAREST_NEIGHBOR);	
-	bool resizeTo(ofxVoxels_<PixelType> & dst, ofInterpolationMethod interpMethod=OF_INTERPOLATE_NEAREST_NEIGHBOR);
-	bool pasteInto(ofxVoxels_<PixelType> &dst, int x, int y);
+	void mirrorTo(ofxVoxels_<PixelType> & dst, bool _width, bool _height, bool _depth);
+	void mirror(bool _height, bool _width, bool _depth);
+//	bool resize(int dstWidth, int dstHeight, int dstDepth, ofInterpolationMethod interpMethod=OF_INTERPOLATE_NEAREST_NEIGHBOR);
+//	bool resizeTo(ofxVoxels_<PixelType> & dst, ofInterpolationMethod interpMethod=OF_INTERPOLATE_NEAREST_NEIGHBOR);
+	bool pasteInto(ofxVoxels_<PixelType> &dst, int x, int y, int z);
 
 	void swapRgb();
 
 	void clear();
 	
-	PixelType * getPixels();
-	const PixelType * getPixels() const;
+	PixelType * getVoxels();
+	const PixelType * getVoxels() const;
 
-	int getPixelIndex(int x, int y) const;
-	ofColor_<PixelType> getColor(int x, int y) const;
-	void setColor(int x, int y, const ofColor_<PixelType>& color);
+	int getVoxelIndex(int x, int y, int z) const;
+	ofColor_<PixelType> getColor(int x, int y, int z) const;
+	void setColor(int x, int y, int z, const ofColor_<PixelType>& color);
 	void setColor(int index, const ofColor_<PixelType>& color);
 	void setColor(const ofColor_<PixelType>& color);
 
@@ -76,64 +84,67 @@ public:
 
 	int getWidth() const;
 	int getHeight() const;
+	int getDepth() const;
+	ofPoint  getSize() const;
 
-	int getBytesPerPixel() const;
-	int getBitsPerPixel() const;
+	int getVoxelCount() const;
+	int getByteSize() const;
+	int getBytesPerVoxel() const;
+	int getBitsPerVoxel() const;
 	int getBytesPerChannel() const;
 	int getBitsPerChannel() const;
 	int getNumChannels() const;
 
 	ofxVoxels_<PixelType> getChannel(int channel) const;
-	void setChannel(int channel, const ofxVoxels_<PixelType> channelPixels);
+	void setChannel(int channel, const ofxVoxels_<PixelType> channelVoxels);
 
 	ofImageType getImageType() const;
 	void setImageType(ofImageType imageType);
 	void setNumChannels(int numChannels);
 
-	int size() const;
-
 private:
-	float bicubicInterpolate(const float *patch, float x,float y, float x2,float y2, float x3,float y3);
+//	float bicubicInterpolate(const float *patch, float x,float y, float x2,float y2, float x3,float y3);
 
 	void copyFrom( const ofxVoxels_<PixelType>& mom );
 
 	template<typename SrcType>
 	void copyFrom( const ofxVoxels_<SrcType>& mom );
 	
-	PixelType * pixels;
+	PixelType * voxels;
 	int 	width;
 	int 	height;
-
+	int 	depth;
+	
 	int 	channels; // 1, 3, 4 channels per pixel (grayscale, rgb, rgba)
 	bool	bAllocated;
-	bool	pixelsOwner;			// if set from external data don't delete it
+	bool	voxelsOwner;			// if set from external data don't delete it
 
 };
 
 
 typedef ofxVoxels_<unsigned char> ofxVoxels;
-typedef ofxVoxels_<float> ofFloatPixels;
-typedef ofxVoxels_<unsigned short> ofShortPixels;
+typedef ofxVoxels_<float> ofFloatVoxels;
+typedef ofxVoxels_<unsigned short> ofShortVoxels;
 
 
 typedef ofxVoxels& ofxVoxelsRef;
-typedef ofFloatPixels& ofFloatPixelsRef;
-typedef ofShortPixels& ofShortPixelsRef;
+typedef ofFloatVoxels& ofFloatVoxelsRef;
+typedef ofShortVoxels& ofShortVoxelsRef;
 
 // sorry for these ones, being templated functions inside a template i needed to do it in the .h
 // they allow to do things like:
 //
 // ofxVoxels pix;
-// ofFloatPixels pixf;
+// ofFloatVoxels pixf;
 // pix = pixf;
 
 template<typename PixelType>
 template<typename SrcType>
 ofxVoxels_<PixelType>::ofxVoxels_(const ofxVoxels_<SrcType> & mom){
 	bAllocated = false;
-	pixelsOwner = false;
+	voxelsOwner = false;
 	channels = 0;
-	pixels = NULL;
+	voxels = NULL;
 	width = 0;
 	height = 0;
 	copyFrom( mom );
@@ -159,12 +170,12 @@ void ofxVoxels_<PixelType>::copyFrom(const ofxVoxels_<SrcType> & mom){
 		if(sizeof(SrcType) == sizeof(float)) {
 			// coming from float we need a special case to clamp the values
 			for(int i = 0; i < mom.size(); i++){
-				pixels[i] = CLAMP(mom[i], 0, 1) * factor;
+				voxels[i] = CLAMP(mom[i], 0, 1) * factor;
 			}
 		} else{
 			// everything else is a straight scaling
 			for(int i = 0; i < mom.size(); i++){
-				pixels[i] = mom[i] * factor;
+				voxels[i] = mom[i] * factor;
 			}
 		}
 	}

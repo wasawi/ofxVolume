@@ -24,15 +24,14 @@ void testApp::setup()
 	linearFilter= true;
 	
 	// slice
-	clipPlaneDepth	= .50;
-	azimuth			= 0;
-	elevation		= -.50;
+	clipPlaneDepth	= 1;//.50;
+	azimuth			= 1;//0;
+	elevation		= 1;//-.50;
 
 //	cam.setFov(1);
 	blabels = true;
 	
 	// Init Volume
-	volSize=ofVec3f(40);
 	initVolume();
 	
 	// Volume rendering
@@ -57,15 +56,16 @@ void testApp::setup()
 void testApp::initVolume()
 {
 	// Init Volume
-//	volume.load("volumes/Colin27T1_tight/");
+	volume.load("volumes/Colin27T1_tight/");
 //	volume.load("volumes/talairach_nii/");
-	volume.allocate(volSize);
-	volume.setup(boxW, boxH);
+//	volume.getVoxels().mirror(true, false, false);
+//	volume.getVoxels().mirror(false, true, false);
+//	volume.mirror(true, false, false);
+
 	
-	volSize		= volume.getVolSize();
-	volWidth	= volSize.x;
-	volHeight	= volSize.y;
-	volDepth	= volSize.z;
+	ofVec3f volSize(100);
+//	volume.allocate(volSize, OF_PIXELS_MONO);
+//	volume.setup(boxW, boxH);
 }
 
 
@@ -73,17 +73,16 @@ void testApp::initVolume()
 void testApp::initVolumeRendering()
 {
 	// Init Volume Rendering
-    volumeRender.setup(volume.getVolSize(), true);
-	volumeRender.setVolume(volume.getVoxels());
-    volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
+	// don't use pow2 now! the shader is not working!!
+    volumeRender.setup(&volume, false, GL_LUMINANCE);
+//	cout << volume.getWidth();
+	
+	volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
 //	volumeRender.setVolumeTextureFilterMode(GL_LINEAR);
-	volumeRender.setVolumeTextureFilterMode(GL_NEAREST);
+//	volumeRender.setVolumeTextureFilterMode(GL_NEAREST);
 	volumeRender.setClipDepth(clipPlaneDepth);
 //	volumeRender.setSlices(&uiClamp);
-	
-	cubeSize	= volumeRender.getCubeSize();
 }
-
 
 //--------------------------------------------------------------
 void testApp::update()
@@ -99,13 +98,11 @@ void testApp::draw()
 
 	ofSetColor(255);
 	cam.begin();
-	volumeRender.updateVolume();
+	volumeRender.update();
 	cam.end();
 	volumeRender.draw(0, ofGetHeight(), ofGetWidth(), -ofGetHeight());
 	
 	if (blabels) drawLabels();
-	
-//	ofDrawBox(<#float size#>)
 //	ofRectangle();
 }
 
@@ -138,8 +135,11 @@ void testApp::keyPressed(int key)
 			ofToggleFullscreen();
 			break;
 		case 'a':
-			delete volume.voxels;
-			volume.allocate(volSize);
+//			volume.getVoxels().mirror(false, true, false);
+//			volume.getVoxels().rotate90(1);
+			volumeRender.setVolume(&volume, false, GL_LUMINANCE);
+//			volumeRender.setVolume(volume.getVoxelsData());
+			volumeRender.setup(&volume, false, GL_LUMINANCE);
 			break;
 			
 		case 't':

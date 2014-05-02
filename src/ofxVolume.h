@@ -5,6 +5,7 @@
 #pragma once
 #include "ofxImageSequencePlayer.h"
 #include "ofxBox.h"
+#include "ofxVoxels.h"
 
 //Volume Cutting Viepoint
 enum slice
@@ -14,22 +15,20 @@ enum slice
 	AXIAL		//	diadema
 };
 
-class ofxVolume{
+class ofxVolume : public ofxVoxels{
 public:
 	
 	ofxVolume();
     virtual ~ofxVolume();
 
-	void allocate(ofVec3f size);
 	void load(string path="");
 	void setup(float bW, float bH);
 	void redraw(slice vP, int depth);
-
+	void destroy();
 	
 	// Getters
-	unsigned char* getVoxels();
-	ofVec3f getVolSize();
-	ofVec3f getVolPos();
+//	ofVec3f getSize();
+//	ofVec3f getPos();
 	
 	int getVoxelValue();
 	int getVoxelNumber();
@@ -46,9 +45,7 @@ public:
 	void selectVoxels(ofxBox& box);
 	vector <ofVec3f> getVoxelsinBox(ofxBox& box);
 //	void getVoxelsinBox(ofVec3f& _coord, ofVec3f& _size);
-	
-	unsigned char * voxels;
-	
+		
 protected:
 private:
 	void drawBox();
@@ -56,31 +53,18 @@ private:
 	void redrawAxial();
 	void redrawCoronal();
 
+	ofxBox outerBox; //the box outside the volume useful if volume is non symetrical and you nedd a symetrical box to handle gui or others..
+	
 	vector <ofVec3f> getVoxelsinRadius(ofVec3f& _coord, float& _radius);
 	bool inside(ofVec3f _coord);
 	
-    ofxImageSequencePlayer imageSequence;
-	ofPixels myPixels;
+	int w,h,d;
 	int renderWidth, renderHeight;
-	
-	/*
-	int volWidth, volHeight, volDepth;
-	int voxelValue;
-	int voxelNumber;
-	*/
-	
 	int halfH;
 	int halfW;
 	int halfD;
-	
 	float boxW;
 	float boxH;
-
-	int volWidth, volHeight, volDepth;
-	ofVec3f	volSize;
-	ofVec3f	volPos;
-	
-	ofxBox volBox; //the volume box, contains size, pos...
 	
 	// the depth of the current cutting plane
 	int coronalS;
@@ -105,7 +89,6 @@ private:
 	// http://stackoverflow.com/questions/481144/equation-for-testing-if-a-point-is-inside-a-circle
 	
 	vector<ofPixels> selectedVoxels;
-	ofImage ata;
 };
 
 

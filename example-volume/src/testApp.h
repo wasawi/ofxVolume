@@ -4,7 +4,7 @@
 #include "ofxGifEncoder.h"
 #include "ofxVolumetrics.h"
 #include "ofxVolume.h"
-#include "ofxVoxel.h"
+#include "ofxPoint.h"
 
 class testApp : public ofBaseApp
 {
@@ -38,13 +38,9 @@ public:
 	
 	// Volume Rendering
     ofxVolumetrics volumeRender;
-	ofFbo myfboRender;
-	ofVec3f cubeSize;
 	
-	// Volume Slice
+	// Volume
 	ofxVolume	volume;
-	int volWidth, volHeight, volDepth;
-	ofVec3f volSize;
 	
 	// Volume rendering UI vars
 	float FBOq, Zq, thresh, density, dithering;
@@ -55,5 +51,4 @@ public:
 	float	boxW, boxH;
 
 	string		date;
-	ofxVoxel	v;
 };

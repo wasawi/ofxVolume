@@ -18,9 +18,9 @@ static ofImageType getImageTypeFromChannels(int channels){
 template<typename PixelType>
 ofxVoxels_<PixelType>::ofxVoxels_(){
 	bAllocated = false;
-	pixelsOwner = false;
+	voxelsOwner = false;
 	channels = 0;
-	pixels = NULL;
+	voxels = NULL;
 	clear();
 }
 
@@ -32,12 +32,14 @@ ofxVoxels_<PixelType>::~ofxVoxels_(){
 
 template<typename PixelType>
 ofxVoxels_<PixelType>::ofxVoxels_(const ofxVoxels_<PixelType> & mom){
+	
 	bAllocated = false;
-	pixelsOwner = false;
+	voxelsOwner = false;
 	channels = 0;
-	pixels = NULL;
+	voxels = NULL;
 	width = 0;
 	height = 0;
+	depth = 0;
 	copyFrom( mom );
 }
 
@@ -53,109 +55,126 @@ ofxVoxels_<PixelType>& ofxVoxels_<PixelType>::operator=(const ofxVoxels_<PixelTy
 template<typename PixelType>
 void ofxVoxels_<PixelType>::copyFrom(const ofxVoxels_<PixelType> & mom){
 	if(mom.isAllocated()) {
-		allocate(mom.getWidth(), mom.getHeight(), mom.getNumChannels());
-		memcpy(pixels, mom.getPixels(), mom.getWidth() * mom.getHeight() * mom.getBytesPerPixel());
+		allocate(mom.getWidth(), mom.getHeight(), mom.getDepth(), mom.getNumChannels());
+		memcpy(voxels, mom.getVoxels(), mom.getWidth() * mom.getHeight() *mom.getDepth() * mom.getBytesPerVoxel());
 	}
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::set(PixelType val){
-	int size = width * height * channels;
-	for(int i = 0; i < size; i++){
-		pixels[i] = val;
+void ofxVoxels_<PixelType>::setAll(PixelType val){
+	for(int i = 0; i < getByteSize(); i++){
+		voxels[i] = val;
 	}
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::set(int channel,PixelType val){
-	int size = width*height*channels;
-	for(int i=channel;i<size;i+=channels){
-		pixels[i] = val;
+void ofxVoxels_<PixelType>::setAll(int channel,PixelType val){
+	for(int i=channel;i<getByteSize();i+=channels){
+		voxels[i] = val;
 	}
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::setFromPixels(const PixelType * newPixels, int w, int h, int channels){
-	allocate(w, h, channels);
-	memcpy(pixels, newPixels, w * h * getBytesPerPixel());
+void ofxVoxels_<PixelType>::setFromVoxels(const PixelType * newVoxels, int w, int h, int d, int channels){
+	allocate(w, h, d, channels);
+	memcpy(voxels, newVoxels, w* h* d* getBytesPerVoxel());
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::setFromPixels(const PixelType * newPixels, int w, int h, ofImageType type){
-	allocate(w,h,type);
+void ofxVoxels_<PixelType>::setFromVoxels(const PixelType * newVoxels, int w, int h, int d, ofImageType type){
+	allocate(w,h,d,type);
 	switch(type){
 	case OF_IMAGE_GRAYSCALE:
-		setFromPixels(newPixels,w,h,1);
+		setFromVoxels(newVoxels,w,h,d,1);
 		break;
 	case OF_IMAGE_COLOR:
-		setFromPixels(newPixels,w,h,3);
+		setFromVoxels(newVoxels,w,h,d,3);
 		break;
 	case OF_IMAGE_COLOR_ALPHA:
-		setFromPixels(newPixels,w,h,4);
+		setFromVoxels(newVoxels,w,h,d,4);
 		break;
 	default:
-		ofLogError("ofxVoxels") << "setFromPixels(): image type " << type << " not supported, not copying";
+		ofLogError("ofxVoxels") << "setFromVoxels(): image type " << type << " not supported, not copying";
 		break;
 	}
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::setFromExternalPixels(PixelType * newPixels, int w, int h, int _channels){
+void ofxVoxels_<PixelType>::setFromExternalVoxels(PixelType * newVoxels, int w, int h, int d, int _channels){
 	clear();
 	channels = _channels;
-	width= w;
-	height = h;
-
-	pixels = newPixels;
-	pixelsOwner = false;
+	width	= w;
+	height	= h;
+	depth	= d;
+	
+	voxels = newVoxels;
+	voxelsOwner = false;
 	bAllocated = true;
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::setFromAlignedPixels(const PixelType * newPixels, int width, int height, int channels, int stride) {
-	if(width*channels==stride){
-		setFromPixels(newPixels,width,height,channels);
+void ofxVoxels_<PixelType>::setFromAlignedVoxels(const PixelType * newVoxels, int w, int h, int d, int channels, int stride) {
+	if(w*channels==stride){
+		setFromVoxels(newVoxels, w, h, d, channels);
 		return;
 	}
-	allocate(width, height, channels);
-	int dstStride = width * getBytesPerPixel();
-	const unsigned char* src = (unsigned char*) newPixels;
-	unsigned char* dst =  (unsigned char*) pixels;
-	for(int i = 0; i < height; i++) {
-		memcpy(dst, src, dstStride);
-		src += stride;
-		dst += dstStride;
+	allocate(w, h, d, channels);
+	int dstStride = width * getBytesPerVoxel();
+
+	const unsigned char* src	= (unsigned char*) newVoxels;
+	unsigned char* dst			= (unsigned char*) voxels;
+
+	for(int i = 0; i < depth; i++) {
+		for(int j = 0; j < height; j++) {
+			memcpy(dst, src, dstStride);
+			src += stride;
+			dst += dstStride;
+		}
 	}
 }
 
 template<typename PixelType>
 void ofxVoxels_<PixelType>::swap(ofxVoxels_<PixelType> & pix){
-	std::swap(pixels,pix.pixels);
+	std::swap(voxels,pix.voxels);
 	std::swap(width, pix.width);
 	std::swap(height,pix.height);
+	std::swap(depth,pix.depth);
 	std::swap(channels,pix.channels);
-	std::swap(pixelsOwner, pix.pixelsOwner);
+	std::swap(voxelsOwner, pix.voxelsOwner);
 	std::swap(bAllocated, pix.bAllocated);
 }
 
 template<typename PixelType>
-PixelType * ofxVoxels_<PixelType>::getPixels(){
-	return &pixels[0];
+PixelType * ofxVoxels_<PixelType>::getVoxels(){
+	return &voxels[0];
 }
 
 template<typename PixelType>
-const PixelType * ofxVoxels_<PixelType>::getPixels() const{
-	return &pixels[0];
+const PixelType * ofxVoxels_<PixelType>::getVoxels() const{
+	return &voxels[0];
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::allocate(int w, int h, int _channels){
-	if (w < 0 || h < 0) {
+void ofxVoxels_<PixelType>::allocate(ofxBox box, int _channels){
+	allocate(box.w, box.h, box.d, _channels);
+}
+template<typename PixelType>
+void ofxVoxels_<PixelType>::allocate(ofVec3f size, int _channels){
+	allocate(size.x, size.y, size.z, _channels);
+}
+template<typename PixelType>
+void ofxVoxels_<PixelType>::allocate(ofVec3f size, ofPixelFormat format){
+	allocate(size.x, size.y, size.z, format);
+}
+
+template<typename PixelType>
+void ofxVoxels_<PixelType>::allocate(int w, int h, int d, int _channels){
+	if (w < 0 || h < 0 || d < 0) {
 		return;
 	}
 
 	//we check if we are already allocated at the right size
-	if(bAllocated && w == width && h == height && channels ==_channels){
+	if(bAllocated && w == width && h == height && d == depth && channels ==_channels){
 		return; //we don't need to allocate
 	}
 
@@ -165,17 +184,17 @@ void ofxVoxels_<PixelType>::allocate(int w, int h, int _channels){
 	channels = _channels;
 	width= w;
 	height = h;
-
-	pixels = new PixelType[w * h * channels];
+	depth = d;
+	
+	voxels = new PixelType[w * h * d * channels];
 	bAllocated = true;
-	pixelsOwner = true;
+	voxelsOwner = true;
 }
 
-
 template<typename PixelType>
-void ofxVoxels_<PixelType>::allocate(int w, int h, ofPixelFormat format){
+void ofxVoxels_<PixelType>::allocate(int w, int h, int d, ofPixelFormat format){
 
-	if (w < 0 || h < 0) return;
+	if (w < 0 || h < 0|| d < 0) return;
 
 	ofImageType imgType;
 	switch(format){
@@ -195,20 +214,20 @@ void ofxVoxels_<PixelType>::allocate(int w, int h, ofPixelFormat format){
 			break;
 
 	}
-	allocate(w,h,imgType);
+	allocate(w,h,d,imgType);
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::allocate(int w, int h, ofImageType type){
+void ofxVoxels_<PixelType>::allocate(int w, int h, int d, ofImageType type){
 	switch(type){
 	case OF_IMAGE_GRAYSCALE:
-		allocate(w,h,1);
+		allocate(w,h,d,1);
 		break;
 	case OF_IMAGE_COLOR:
-		allocate(w,h,3);
+		allocate(w,h,d,3);
 		break;
 	case OF_IMAGE_COLOR_ALPHA:
-		allocate(w,h,4);
+		allocate(w,h,d,4);
 		break;
 	default:
 		ofLogError("ofxVoxels") << "allocate(): unknown image type, not allocating";
@@ -220,46 +239,47 @@ void ofxVoxels_<PixelType>::allocate(int w, int h, ofImageType type){
 template<typename PixelType>
 void ofxVoxels_<PixelType>::swapRgb(){
 	if (channels >= 3){
-		int sizePixels = width*height*channels;
-		for (int i=0; i< sizePixels; i+=channels){
-			std::swap(pixels[i],pixels[i+2]);
+		int sizeVoxels = width*height*depth*channels;
+		for (int i=0; i< sizeVoxels; i+=channels){
+			std::swap(voxels[i],voxels[i+2]);
 		}
 	}
 }
 
 template<typename PixelType>
 void ofxVoxels_<PixelType>::clear(){
-	if(pixels){
-		if(pixelsOwner) delete[] pixels;
-		pixels = NULL;
+	if(voxels){
+		if(voxelsOwner) delete[] voxels;
+		voxels = NULL;
 	}
 
 	width			= 0;
 	height			= 0;
+	depth			= 0;
 	channels		= 0;
 	bAllocated		= false;
 }
 
 template<typename PixelType>
-int ofxVoxels_<PixelType>::getPixelIndex(int x, int y) const {
+int ofxVoxels_<PixelType>::getVoxelIndex(int x, int y, int z) const {
 	if( !bAllocated ){
 		return 0;
 	}else{
-		return ( x + y * width ) * channels;
+		return ( x + (y * width ) + (z * width * height)) * channels;
 	}
 }
 
 template<typename PixelType>
-ofColor_<PixelType> ofxVoxels_<PixelType>::getColor(int x, int y) const {
+ofColor_<PixelType> ofxVoxels_<PixelType>::getColor(int x, int y, int z) const {
 	ofColor_<PixelType> c;
-	int index = getPixelIndex(x, y);
+	int index = getVoxelIndex(x, y, z);
 
 	if( channels == 1 ){
-		c.set( pixels[index] );
+		c.set( voxels[index] );
 	}else if( channels == 3 ){
-		c.set( pixels[index], pixels[index+1], pixels[index+2] );
+		c.set( voxels[index], voxels[index+1], voxels[index+2] );
 	}else if( channels == 4 ){
-		c.set( pixels[index], pixels[index+1], pixels[index+2], pixels[index+3] );
+		c.set( voxels[index], voxels[index+1], voxels[index+2], voxels[index+3] );
 	}
 
 	return c;
@@ -268,42 +288,42 @@ ofColor_<PixelType> ofxVoxels_<PixelType>::getColor(int x, int y) const {
 template<typename PixelType>
 void ofxVoxels_<PixelType>::setColor(int index, const ofColor_<PixelType>& color) {
 	if( channels == 1 ){
-		pixels[index] = color.getBrightness();
+		voxels[index] = color.getBrightness();
 	}else if( channels == 3 ){
-		pixels[index] = color.r;
-		pixels[index+1] = color.g;
-		pixels[index+2] = color.b;
+		voxels[index] = color.r;
+		voxels[index+1] = color.g;
+		voxels[index+2] = color.b;
 	}else if( channels == 4 ){
-		pixels[index] = color.r;
-		pixels[index+1] = color.g;
-		pixels[index+2] = color.b;
-		pixels[index+3] = color.a;
+		voxels[index] = color.r;
+		voxels[index+1] = color.g;
+		voxels[index+2] = color.b;
+		voxels[index+3] = color.a;
 	}
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::setColor(int x, int y, const ofColor_<PixelType>& color) {
-	setColor(getPixelIndex(x, y), color);
+void ofxVoxels_<PixelType>::setColor(int x, int y, int z, const ofColor_<PixelType>& color) {
+	setColor(getVoxelIndex(x, y, z), color);
 }
 
 template<typename PixelType>
 void ofxVoxels_<PixelType>::setColor(const ofColor_<PixelType>& color) {
 	int i = 0;
-	while(i < size()) {
+	while(i < getByteSize()) {
 		for(int j = 0; j < channels; j++) {
-			pixels[i++] = color[j];
+			voxels[i++] = color[j];
 		}
 	}
 }
 
 template<typename PixelType>
 PixelType & ofxVoxels_<PixelType>::operator[](int pos){
-	return pixels[pos];
+	return voxels[pos];
 }
 
 template<typename PixelType>
 const PixelType & ofxVoxels_<PixelType>::operator[](int pos) const{
-	return pixels[pos];
+	return voxels[pos];
 }
 
 template<typename PixelType>
@@ -315,19 +335,36 @@ template<typename PixelType>
 int ofxVoxels_<PixelType>::getWidth() const{
 	return width;
 }
-
 template<typename PixelType>
 int ofxVoxels_<PixelType>::getHeight() const{
 	return height;
 }
+template<typename PixelType>
+int ofxVoxels_<PixelType>::getDepth() const{
+	return depth;
+}
+template<typename PixelType>
+ofPoint ofxVoxels_<PixelType>::getSize() const {
+	return ofPoint(width, height, depth);
+}
 
 template<typename PixelType>
-int ofxVoxels_<PixelType>::getBytesPerPixel() const{
+int ofxVoxels_<PixelType>::getVoxelCount() const{
+	return width*height*depth;
+}
+
+template<typename PixelType>
+int ofxVoxels_<PixelType>::getByteSize() const{
+	return getVoxelCount()*channels;
+}
+
+template<typename PixelType>
+int ofxVoxels_<PixelType>::getBytesPerVoxel() const{
 	return getBytesPerChannel() * channels;
 }
 
 template<typename PixelType>
-int ofxVoxels_<PixelType>::getBitsPerPixel() const{
+int ofxVoxels_<PixelType>::getBitsPerVoxel() const{
 	return getBitsPerChannel() * channels;
 }
 
@@ -355,14 +392,14 @@ template<typename PixelType>
 void ofxVoxels_<PixelType>::setImageType(ofImageType imageType){
 	if(!isAllocated() || imageType==getImageType()) return;
 	ofxVoxels_<PixelType> dst;
-	dst.allocate(width,height,imageType);
+	dst.allocate(width,height,depth,imageType);
 	PixelType * dstPtr = &dst[0];
-	PixelType * srcPtr = &pixels[0];
+	PixelType * srcPtr = &voxels[0];
 	int diffNumChannels = 0;
 	if(dst.getNumChannels()<getNumChannels()){
 		diffNumChannels = getNumChannels()-dst.getNumChannels();
 	}
-	for(int i=0;i<width*height;i++){
+	for(int i=0;i<width*height*depth;i++){
 		const PixelType & gray = *srcPtr;
 		for(int j=0;j<dst.getNumChannels();j++){
 			if(j<getNumChannels()){
@@ -385,185 +422,135 @@ void ofxVoxels_<PixelType>::setNumChannels(int numChannels){
 }
 
 template<typename PixelType>
-int ofxVoxels_<PixelType>::size() const{
-	return width*height*channels;
-}
-
-template<typename PixelType>
 ofxVoxels_<PixelType> ofxVoxels_<PixelType>::getChannel(int channel) const{
-	ofxVoxels_<PixelType> channelPixels;
-	channelPixels.allocate(width,height,1);
+	ofxVoxels_<PixelType> channelVoxels;
+	channelVoxels.allocate(width,height,depth,1);
 	channel = ofClamp(channel,0,channels-1);
 	int j=0;
-	for(int i=channel;i<size();i+=channels, ++j){
-		channelPixels[j]=pixels[i];
+	for(int i=channel; i<getByteSize(); i+=channels, ++j){
+		channelVoxels[j]=voxels[i];
 	}
-	return channelPixels;
+	return channelVoxels;
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::setChannel(int channel, const ofxVoxels_<PixelType> channelPixels){
+void ofxVoxels_<PixelType>::setChannel(int channel, const ofxVoxels_<PixelType> channelVoxels){
 	channel = ofClamp(channel,0,channels-1);
 	int j=0;
-	for(int i=channel;i<size();i+=channels, ++j){
-		pixels[i]=channelPixels[j];
+	for(int i=channel;i<getByteSize();i+=channels, ++j){
+		voxels[i] = channelVoxels[j];
 	}
 
 }
 
 //From ofxVoxelsUtils
-//----------------------------------------------------------------------
+//---------------------------------------------------------------------- OK? to test
 template<typename PixelType>
-void ofxVoxels_<PixelType>::crop(int x, int y, int _width, int _height){
+void ofxVoxels_<PixelType>::crop(int x, int y, int z, int w, int h, int d){
 
 	if (bAllocated == true){
 
-		_width = ofClamp(_width,1,getWidth());
-		_height = ofClamp(_height,1,getHeight());
-
-		int bytesPerPixel = channels;
-
-		int newWidth = _width;
-		int newHeight = _height;
+		w = ofClamp(w,1,getWidth());
+		h = ofClamp(h,1,getHeight());
+		d = ofClamp(h,1,getDepth());
 		
-		PixelType * newPixels = new PixelType[newWidth*newHeight*bytesPerPixel];
-		memset(newPixels, 0, newWidth*newHeight*channels*sizeof(PixelType));
+		int bytesPerVoxel = channels;
+
+		int newWidth = w;
+		int newHeight = h;
+		int newDepth = d;
+		
+		// malloc
+		PixelType * newVoxels = new PixelType[newWidth* newHeight* newDepth* bytesPerVoxel];
+		memset(newVoxels, 0, newWidth* newHeight* newDepth* channels*sizeof(PixelType));
 
 		// this prevents having to do a check for bounds in the for loop;
 		int minX = MAX(x, 0);
-		int maxX = MIN(x+_width, width);
+		int maxX = MIN(x+w, width);
 		int minY = MAX(y, 0);
-		int maxY = MIN(y+_height, height);
+		int maxY = MIN(y+h, height);
+		int minZ = MAX(z, 0);
+		int maxZ = MIN(z+d, depth);
 
 		// TODO: point math can help speed this up:
 		for (int i = minX; i < maxX; i++){
 			for (int j = minY; j < maxY; j++){
-
-				int newPixel = (j-y) * newWidth + (i-x);
-				int oldPixel = (j) * width + (i);
-
-				for (int k = 0; k < bytesPerPixel; k++){
-					newPixels[newPixel*bytesPerPixel + k] = pixels[oldPixel*bytesPerPixel + k];
+				for (int k = minZ; k < maxZ; k++){
+					//		return ( x + (y * width ) + (z * width * height)) * channels;
+					int newVoxel =	(i-x) +									//x
+									((j-y) * newWidth) +					//y
+									((k-z) * newWidth * newHeight) ;		//z
+					int oldVoxel = i + (j * width) + (z * width * height);
+					
+					for (int l = 0; l < bytesPerVoxel; l++){
+						newVoxels[newVoxel* bytesPerVoxel + l] = voxels[oldVoxel* bytesPerVoxel + l];
+					}
 				}
 			}
-		}
-
-		delete [] pixels;
-		pixels = newPixels;
-		width = newWidth;
-		height = newHeight;
+		}//end for
+		delete [] voxels;
+		voxels	= newVoxels;
+		width	= newWidth;
+		height	= newHeight;
+		depth	= newDepth;
 	}
 }
 
-//----------------------------------------------------------------------
+//---------------------------------------------------------------------- OK? to test
 template<typename PixelType>
-void ofxVoxels_<PixelType>::cropTo(ofxVoxels_<PixelType> &toPix, int x, int y, int _width, int _height){
-
+void ofxVoxels_<PixelType>::cropTo(ofxVoxels_<PixelType> &toPix, int x, int y, int z, int w, int h, int d){
 
 	if (bAllocated == true){
+		
+		w = ofClamp(w,1,getWidth());
+		h = ofClamp(h,1,getHeight());
+		d = ofClamp(d,1,getDepth());
+		
+		int bytesPerVoxel = channels;
 
-		_width = ofClamp(_width,1,getWidth());
-		_height = ofClamp(_height,1,getHeight());
-
-		int bytesPerPixel = channels;
-
-		if ((toPix.width != _width) || (toPix.height != _height) || (toPix.channels != channels)){
-			toPix.allocate(_width, _height, channels);
+		int newWidth	= w;
+		int newHeight	= h;
+		int newDepth	= d;
+		
+		if ((toPix.width != w) || (toPix.height != h) || (toPix.depth != d) || (toPix.channels != channels)){
+			toPix.allocate(w, h, d, channels);
 		}
 
-		int newWidth = _width;
-		PixelType * newPixels = toPix.pixels;
+		PixelType * newVoxels = toPix.voxels;
 
 		// this prevents having to do a check for bounds in the for loop;
 		int minX = MAX(x, 0);
-		int maxX = MIN(x+_width, width);
+		int maxX = MIN(x+w, width);
 		int minY = MAX(y, 0);
-		int maxY = MIN(y+_height, height);
+		int maxY = MIN(y+h, height);
+		int minZ = MAX(z, 0);
+		int maxZ = MIN(z+d, depth);
 
 		// TODO: point math can help speed this up:
 		for (int i = minX; i < maxX; i++){
 			for (int j = minY; j < maxY; j++){
-
-				int newPixel = (j-y) * newWidth + (i-x);
-				int oldPixel = (j) * width + (i);
-
-				for (int k = 0; k < bytesPerPixel; k++){
-					newPixels[newPixel*bytesPerPixel + k] = pixels[oldPixel*bytesPerPixel + k];
+				for (int k = minZ; k < maxZ; k++){
+					//		return ( x + (y * width ) + (z * width * height)) * channels;
+					int newVoxel =	(i-x) +									//x
+									((j-y) * newWidth) +					//y
+									((k-z) * newWidth * newHeight) ;		//z
+					int oldVoxel = i + (j * width) + (z * width * height);
+					
+					for (int l = 0; l < bytesPerVoxel; l++){
+						newVoxels[newVoxel* bytesPerVoxel + l] = voxels[oldVoxel* bytesPerVoxel + l];
+					}
 				}
 			}
-		}
-
-
-	}
-
-}
-
-//----------------------------------------------------------------------
-template<typename PixelType>
-void ofxVoxels_<PixelType>::rotate90To(ofxVoxels_<PixelType> & dst, int nClockwiseRotations){
-	if (bAllocated == false){
-		return;
-	}
-
-	if(&dst == this){
-		rotate90(nClockwiseRotations);
-		return;
-	}
-
-	// first, figure out which type of rotation we have
-	int rotation = nClockwiseRotations;
-	while (rotation < 0){
-		rotation+=4;
-	}
-	rotation %= 4;
-
-	// if it's 0, just make a copy.  if it's 2, do it by a mirror operation.
-	if (rotation == 0) {
-		dst = *this;
-		return;
-		// do nothing!
-	} else if (rotation == 2) {
-		mirrorTo(dst, true, true);
-		return;
-	}
-
-	// otherwise, we will need to do some new allocaiton.
-	dst.allocate(height,width,getImageType());
-    
-	int strideSrc = width * channels;
-	int strideDst = dst.width * channels;
-
-	if(rotation == 1){
-		PixelType * srcPixels = pixels;
-		for (int i = 0; i < height; i++){
-			PixelType * dstPixels = dst.getPixels() + (strideDst - channels*(i+1));
-			for (int j = 0; j < width; j++){
-				for (int k = 0; k < channels; k++){
-					dstPixels[k] = srcPixels[k];
-				}
-				srcPixels += channels;
-				dstPixels += strideDst;
-			}
-		}
-	} else if(rotation == 3){
-		PixelType * dstPixels = dst.pixels;
-		for (int i = 0; i < dst.height; i++){
-			PixelType * srcPixels = pixels + (strideSrc - channels*(i+1));
-			for (int j = 0; j < dst.width; j++){
-				for (int k = 0; k < channels; k++){
-					dstPixels[k] = srcPixels[k];
-				}
-				srcPixels += strideSrc;
-				dstPixels += channels;
-			}
-		}
+		}//end for
 	}
 }
 
-//----------------------------------------------------------------------
+//---------------------------------------------------------------------- TODO
+/* 3rd axis not written. this means that I've just adapted the code to run through the volume,
+ but you can rotate ONLY in one axis.
+ */
 template<typename PixelType>
 void ofxVoxels_<PixelType>::rotate90(int nClockwiseRotations){
-
 
 	if (bAllocated == false){
 		return;
@@ -578,120 +565,314 @@ void ofxVoxels_<PixelType>::rotate90(int nClockwiseRotations){
 
 	// if it's 0, do nothing.  if it's 2, do it by a mirror operation.
 	if (rotation == 0) {
-		return;
-		// do nothing!
+		return;	// do nothing!
 	} else if (rotation == 2) {
-		mirror(true, true);
+		mirror(true, true, false);
 		return;
 	}
-
-	ofxVoxels_<PixelType> newPixels;
-	rotate90To(newPixels,nClockwiseRotations);
-	delete [] pixels;
-	pixels = newPixels.pixels;
-	width = newPixels.width;
-	height = newPixels.height;
-	newPixels.pixelsOwner = false;
+	
+	// otherwise, we will need to do some new allocaiton.
+	ofxVoxels_<PixelType> newVoxels;
+	rotate90To(newVoxels,nClockwiseRotations);
+	delete [] voxels;
+	voxels = newVoxels.voxels;
+	width = newVoxels.width;
+	height = newVoxels.height;
+	depth = newVoxels.depth;
+	newVoxels.voxelsOwner = false;
 
 }
 
-//----------------------------------------------------------------------
+//---------------------------------------------------------------------- TODO
+/* 3rd axis not written. this means that I've just adapted the code to run through the volume,
+ but you can rotate ONLY in one axis.
+ */
 template<typename PixelType>
-void ofxVoxels_<PixelType>::mirror(bool vertically, bool horizontal){
+void ofxVoxels_<PixelType>::rotate90To(ofxVoxels_<PixelType> & dst, int nClockwiseRotations){
+	if (bAllocated == false){
+		return;
+	}
+	
+	if(&dst == this){
+		rotate90(nClockwiseRotations);
+		return;
+	}
+	
+	// first, figure out which type of rotation we have
+	int rotation = nClockwiseRotations;
+	while (rotation < 0){
+		rotation+=4;
+	}
+	rotation %= 4;
+	
+	// if it's 0, just make a copy.  if it's 2, do it by a mirror operation.
+	if (rotation == 0) {
+		dst = *this;
+		return;
+		// do nothing!
+	} else if (rotation == 2) {
+		mirrorTo(dst, true, true, false);
+		return;
+	}
+	
+	// otherwise, we will need to do some new allocaiton.
+	dst.allocate(height,width,depth,getImageType());
+    
+	int strideSrc = width * channels;
+	int strideDst = dst.width * channels;
+	
+	if(rotation == 1){
+		PixelType * srcVoxels = voxels;
+		for (int i = 0; i < height; i++){
+			PixelType * dstVoxels = dst.getVoxels() + (strideDst - channels*(i+1));
+			for (int j = 0; j < width; j++){
+				for (int k = 0; k < channels; k++){
+					dstVoxels[k] = srcVoxels[k];
+				}
+				srcVoxels += channels;
+				dstVoxels += strideDst;
+			}
+		}
+	} else if(rotation == 3){
+		PixelType * dstVoxels = dst.voxels;
+		for (int i = 0; i < dst.height; i++){
+			PixelType * srcVoxels = voxels + (strideSrc - channels*(i+1));
+			for (int j = 0; j < dst.width; j++){
+				for (int k = 0; k < channels; k++){
+					dstVoxels[k] = srcVoxels[k];
+				}
+				srcVoxels += strideSrc;
+				dstVoxels += channels;
+			}
+		}
+	}
+}
 
-	if (!vertically && !horizontal){
+//---------------------------------------------------------------------- OK? to test
+template<typename PixelType>
+void ofxVoxels_<PixelType>::mirror(bool _width, bool _height, bool _depth){
+
+	if (!_width && !_height && !_depth){
 		return;
 	}
 
-	int bytesPerPixel = channels;
-	PixelType * oldPixels = pixels;
+	int bytesPerVoxel = channels;
+	PixelType * oldVoxels = voxels;
 	PixelType tempVal;
 
-	if (! (vertically && horizontal)){
-		int wToDo = horizontal ? width/2 : width;
-		int hToDo = vertically ? height/2 : height;
-
+	if (! (_width && _height && _depth)){
+		int wToDo = _width ? width/2 : width;
+		int hToDo = _height ? height/2 : height;
+		int dToDo = _depth ? depth/2 : depth;
+		
 		for (int i = 0; i < wToDo; i++){
 			for (int j = 0; j < hToDo; j++){
-
-				int pixelb = (vertically ? (height - j - 1) : j) * width + (horizontal ? (width - i - 1) : i);
-				int pixela = j*width + i;
-				for (int k = 0; k < bytesPerPixel; k++){
-
-					tempVal = oldPixels[pixela*bytesPerPixel + k];
-					oldPixels[pixela*bytesPerPixel + k] = oldPixels[pixelb*bytesPerPixel + k];
-					oldPixels[pixelb*bytesPerPixel + k] = tempVal;
-
-				}
+				for (int k = 0; k < dToDo; k++){
+//					int newVoxel =	(i-x) +									//x
+//									((j-y) * newWidth) +					//y
+//									((k-z) * newWidth * newHeight) ;		//z
+//					int oldVoxel = i + (j * width) + (z * width * height);
+					
+//					int pixelb = (_height ? (height - j - 1) : j) * width + (_width ? (width - i - 1) : i);
+					int pixelb =(_width ? (width - i - 1) : i) +
+								((_height ? (height - j - 1) : j) * width) +
+								((_depth ? (depth - k - 1) : k) * width * height);
+					int pixela = i + (j*width) + (k*width*height) ;
+					
+					for (int l = 0; l < bytesPerVoxel; l++){
+						tempVal = oldVoxels[pixela*bytesPerVoxel + l];
+						oldVoxels[pixela*bytesPerVoxel + l] = oldVoxels[pixelb*bytesPerVoxel + l];
+						oldVoxels[pixelb*bytesPerVoxel + l] = tempVal;
+					}
+			}
 			}
 		}
 	} else {
 		// I couldn't think of a good way to do this in place.  I'm sure there is.
-		mirror(true, false);
-		mirror(false, true);
+		mirror(true, false, false);
+		mirror(false, true, false);
+		mirror(false, false, true);
 	}
-
 }
 
-//----------------------------------------------------------------------
+//---------------------------------------------------------------------- OK? to test
 template<typename PixelType>
-void ofxVoxels_<PixelType>::mirrorTo(ofxVoxels_<PixelType> & dst, bool vertically, bool horizontal){
+void ofxVoxels_<PixelType>::mirrorTo(ofxVoxels_<PixelType> & dst, bool _width, bool _height, bool _depth){
 	if(&dst == this){
-		mirror(vertically,horizontal);
+		mirror(_width, _height, _depth);
 		return;
 	}
 
-	if (!vertically && !horizontal){
+	if (!_width && !_height && _depth){
 		dst = *this;
 		return;
 	}
 
-	int bytesPerPixel = channels;
-
-	if (! (vertically && horizontal)){
-		int wToDo = horizontal ? width/2 : width;
-		int hToDo = vertically ? height/2 : height;
-
+	int bytesPerVoxel = channels;
+	if (! (_width && _height && _depth)){
+		int wToDo = _width ? width/2 : width;
+		int hToDo = _height ? height/2 : height;
+		int dToDo = _depth ? depth/2 : depth;
+		
 		for (int i = 0; i < wToDo; i++){
 			for (int j = 0; j < hToDo; j++){
-
-				int pixelb = (vertically ? (height - j - 1) : j) * width + (horizontal ? (width - i - 1) : i);
-				int pixela = j*width + i;
-				for (int k = 0; k < bytesPerPixel; k++){
-					dst[pixela*bytesPerPixel + k] = pixels[pixelb*bytesPerPixel + k];
-					dst[pixelb*bytesPerPixel + k] = pixels[pixela*bytesPerPixel + k];
-
+				for (int k = 0; k < dToDo; k++){
+					//int newVoxel =(i-x) +									//x
+					//				((j-y) * newWidth) +					//y
+					//				((k-z) * newWidth * newHeight) ;		//z
+					//int oldVoxel = i + (j * width) + (z * width * height);
+					
+					//int pixelb = (_height ? (height - j - 1) : j) * width + (_width ? (width - i - 1) : i);
+					int pixelb =(_width ? (width - i - 1) : i) +
+					((_height ? (height - j - 1) : j) * width) +
+					((_depth ? (depth - k - 1) : k) * width * height);
+					int pixela = i + (j*width) + (k*width*height) ;
+					
+					for (int l = 0; l < bytesPerVoxel; l++){
+						dst[pixela*bytesPerVoxel + k] = voxels[pixelb*bytesPerVoxel + k];
+						dst[pixelb*bytesPerVoxel + k] = voxels[pixela*bytesPerVoxel + k];
+					}
 				}
 			}
 		}
 	} else {
 		// I couldn't think of a good way to do this in place.  I'm sure there is.
-		mirrorTo(dst,true, false);
-		dst.mirror(false, true);
+		mirrorTo(dst, true, false, false); // why mirrorTo? We have to insert the data at least once, otherwise it would be empty.
+		dst.mirror(false, true, false);
+		dst.mirror(false, false, true);
 	}
 
 }
-
-//----------------------------------------------------------------------
+/*
+//---------------------------------------------------------------------- OK? to test
 template<typename PixelType>
-bool ofxVoxels_<PixelType>::resize(int dstWidth, int dstHeight, ofInterpolationMethod interpMethod){
+bool ofxVoxels_<PixelType>::resize(int dstWidth, int dstHeight, int dstDepth, ofInterpolationMethod interpMethod){
 
-	if ((dstWidth<=0) || (dstHeight<=0) || !(isAllocated())) return false;
+	if ((dstWidth<=0) || (dstHeight<=0) || (dstDepth<=0) || !(isAllocated())) return false;
 
-	ofxVoxels_<PixelType> dstPixels;
-	dstPixels.allocate(dstWidth, dstHeight,getImageType());
+	ofxVoxels_<PixelType> dstVoxels;
+	dstVoxels.allocate(dstWidth, dstHeight, dstDepth, getImageType());
 
-	if(!resizeTo(dstPixels,interpMethod)) return false;
+	if(!resizeTo(dstVoxels,interpMethod)) return false;
 
-	delete [] pixels;
-	pixels = dstPixels.getPixels();
+	delete [] voxels;
+	voxels = dstVoxels.getVoxels();
 	width  = dstWidth;
 	height = dstHeight;
-	dstPixels.pixelsOwner = false;
+	depth  = dstDepth;
+	dstVoxels.voxelsOwner = false;
 	return true;
 }
 
-//----------------------------------------------------------------------
+//---------------------------------------------------------------------- TODO
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::resizeTo(ofxVoxels_<PixelType>& dst, ofInterpolationMethod interpMethod){
+	if(&dst == this){
+		return true;
+	}
+	
+	if (!(isAllocated()) || !(dst.isAllocated()) || getBytesPerVoxel() != dst.getBytesPerVoxel() || getNumChannels()!=dst.getNumChannels()) return false;
+	
+	int srcWidth      = getWidth();
+	int srcHeight     = getHeight();
+	int dstWidth	  = dst.getWidth();
+	int dstHeight	  = dst.getHeight();
+	int channels 	  = getNumChannels();
+	
+	
+	PixelType * dstVoxels = dst.getVoxels();
+	
+	switch (interpMethod){
+			
+			//----------------------------------------
+		case OF_INTERPOLATE_NEAREST_NEIGHBOR:{
+			int dstIndex = 0;
+			float srcxFactor = (float)srcWidth/dstWidth;
+			float srcyFactor = (float)srcHeight/dstHeight;
+			float srcy = 0.5;
+			for (int dsty=0; dsty<dstHeight; dsty++){
+				float srcx = 0.5;
+				int srcIndex = int(srcy)*srcWidth;
+				for (int dstx=0; dstx<dstWidth; dstx++){
+					int pixelIndex = int(srcIndex + srcx) * channels;
+					for (int k=0; k<channels; k++){
+						dstVoxels[dstIndex] = voxels[pixelIndex];
+						dstIndex++;
+						pixelIndex++;
+					}
+					srcx+=srcxFactor;
+				}
+				srcy+=srcyFactor;
+			}
+		}break;
+			
+			//----------------------------------------
+		case OF_INTERPOLATE_BILINEAR:
+			// not implemented yet
+			ofLogError("ofxVoxels") << "resizeTo(): bilinear resize not implemented, not resizing";
+			break;
+			
+			//----------------------------------------
+		case OF_INTERPOLATE_BICUBIC:
+			float px1, py1;
+			float px2, py2;
+			float px3, py3;
+			
+			float srcColor = 0;
+			float interpCol;
+			int patchRow;
+			int patchIndex;
+			float patch[16];
+			
+			int srcRowBytes = srcWidth*channels;
+			int loIndex = (srcRowBytes)+1;
+			int hiIndex = (srcWidth*srcHeight*channels)-(srcRowBytes)-1;
+			
+			for (int dsty=0; dsty<dstHeight; dsty++){
+				for (int dstx=0; dstx<dstWidth; dstx++){
+					
+					int   dstIndex0 = (dsty*dstWidth + dstx) * channels;
+					float srcxf = srcWidth  * (float)dstx/(float)dstWidth;
+					float srcyf = srcHeight * (float)dsty/(float)dstHeight;
+					int   srcx = (int) MIN(srcWidth-1,   srcxf);
+					int   srcy = (int) MIN(srcHeight-1,  srcyf);
+					int   srcIndex0 = (srcy*srcWidth + srcx) * channels;
+					
+					px1 = srcxf - srcx;
+					py1 = srcyf - srcy;
+					px2 = px1 * px1;
+					px3 = px2 * px1;
+					py2 = py1 * py1;
+					py3 = py2 * py1;
+					
+					for (int k=0; k<channels; k++){
+						int   dstIndex = dstIndex0+k;
+						int   srcIndex = srcIndex0+k;
+						
+						for (int dy=0; dy<4; dy++) {
+							patchRow = srcIndex + ((dy-1)*srcRowBytes);
+							for (int dx=0; dx<4; dx++) {
+								patchIndex = patchRow + (dx-1)*channels;
+								if ((patchIndex >= loIndex) && (patchIndex < hiIndex)) {
+									srcColor = voxels[patchIndex];
+								}
+								patch[dx*4 + dy] = srcColor;
+							}
+						}
+						
+						interpCol = (PixelType)bicubicInterpolate(patch, px1,py1, px2,py2, px3,py3);
+						dstVoxels[dstIndex] = interpCol;
+					}
+					
+				}
+			}
+			break;
+	}
+	
+	return true;
+}
+
+//---------------------------------------------------------------------- TODO
 template<typename PixelType>
 float ofxVoxels_<PixelType>::bicubicInterpolate (const float *patch, float x,float y, float x2,float y2, float x3,float y3) {
 	// adapted from http://www.paulinternet.nl/?page=bicubic
@@ -743,135 +924,35 @@ float ofxVoxels_<PixelType>::bicubicInterpolate (const float *patch, float x,flo
 
 	return MIN(255, MAX(out, 0));
 }
+*/
 
-//----------------------------------------------------------------------
+//---------------------------------------------------------------------- TODO
 template<typename PixelType>
-bool ofxVoxels_<PixelType>::resizeTo(ofxVoxels_<PixelType>& dst, ofInterpolationMethod interpMethod){
-	if(&dst == this){
-		return true;
-	}
+bool ofxVoxels_<PixelType>::pasteInto(ofxVoxels_<PixelType> &dst, int xTo, int yTo, int zTo){
+	if (!(isAllocated()) || !(dst.isAllocated()) ||										// check if voxels are allocated,
+		getBytesPerVoxel() != dst.getBytesPerVoxel() ||									// if bytes are same
+		xTo>=dst.getWidth() || yTo>=dst.getHeight() || zTo>=dst.getDepth()) return false;// and if position is within bounds
 
-	if (!(isAllocated()) || !(dst.isAllocated()) || getBytesPerPixel() != dst.getBytesPerPixel() || getNumChannels()!=dst.getNumChannels()) return false;
+	int bytesToCopyPerRow	= (xTo + getWidth() <=dst.getWidth() ? getWidth() : dst.getWidth() -xTo) * getBytesPerVoxel();
+	int columnsToCopy		= yTo + getHeight() <= dst.getHeight() ? getHeight() : dst.getHeight() -yTo;
+	int pagesToCopy			= zTo + getDepth() <= dst.getDepth() ? getDepth() :	dst.getDepth() -zTo;
+	
+	PixelType * dstVox = dst.getVoxels() + ((xTo + yTo*dst.getWidth())*dst.getBytesPerVoxel());
+	PixelType * srcVox = getVoxels();
+	
+	int srcStride = getWidth() * getBytesPerVoxel();
+	int dstStride = dst.getWidth() * dst.getBytesPerVoxel();
 
-	int srcWidth      = getWidth();
-	int srcHeight     = getHeight();
-	int dstWidth	  = dst.getWidth();
-	int dstHeight	  = dst.getHeight();
-	int channels 	  = getNumChannels();
-
-
-	PixelType * dstPixels = dst.getPixels();
-
-	switch (interpMethod){
-
-			//----------------------------------------
-		case OF_INTERPOLATE_NEAREST_NEIGHBOR:{
-			int dstIndex = 0;
-			float srcxFactor = (float)srcWidth/dstWidth;
-			float srcyFactor = (float)srcHeight/dstHeight;
-			float srcy = 0.5;
-			for (int dsty=0; dsty<dstHeight; dsty++){
-				float srcx = 0.5;
-				int srcIndex = int(srcy)*srcWidth;
-				for (int dstx=0; dstx<dstWidth; dstx++){
-					int pixelIndex = int(srcIndex + srcx) * channels;
-					for (int k=0; k<channels; k++){
-						dstPixels[dstIndex] = pixels[pixelIndex];
-						dstIndex++;
-						pixelIndex++;
-					}
-					srcx+=srcxFactor;
-				}
-				srcy+=srcyFactor;
-			}
-		}break;
-
-			//----------------------------------------
-		case OF_INTERPOLATE_BILINEAR:
-			// not implemented yet
-			ofLogError("ofxVoxels") << "resizeTo(): bilinear resize not implemented, not resizing";
-			break;
-
-			//----------------------------------------
-		case OF_INTERPOLATE_BICUBIC:
-			float px1, py1;
-			float px2, py2;
-			float px3, py3;
-
-			float srcColor = 0;
-			float interpCol;
-			int patchRow;
-			int patchIndex;
-			float patch[16];
-
-			int srcRowBytes = srcWidth*channels;
-			int loIndex = (srcRowBytes)+1;
-			int hiIndex = (srcWidth*srcHeight*channels)-(srcRowBytes)-1;
-
-			for (int dsty=0; dsty<dstHeight; dsty++){
-				for (int dstx=0; dstx<dstWidth; dstx++){
-
-					int   dstIndex0 = (dsty*dstWidth + dstx) * channels;
-					float srcxf = srcWidth  * (float)dstx/(float)dstWidth;
-					float srcyf = srcHeight * (float)dsty/(float)dstHeight;
-					int   srcx = (int) MIN(srcWidth-1,   srcxf);
-					int   srcy = (int) MIN(srcHeight-1,  srcyf);
-					int   srcIndex0 = (srcy*srcWidth + srcx) * channels;
-
-					px1 = srcxf - srcx;
-					py1 = srcyf - srcy;
-					px2 = px1 * px1;
-					px3 = px2 * px1;
-					py2 = py1 * py1;
-					py3 = py2 * py1;
-
-					for (int k=0; k<channels; k++){
-						int   dstIndex = dstIndex0+k;
-						int   srcIndex = srcIndex0+k;
-
-						for (int dy=0; dy<4; dy++) {
-							patchRow = srcIndex + ((dy-1)*srcRowBytes);
-							for (int dx=0; dx<4; dx++) {
-								patchIndex = patchRow + (dx-1)*channels;
-								if ((patchIndex >= loIndex) && (patchIndex < hiIndex)) {
-									srcColor = pixels[patchIndex];
-								}
-								patch[dx*4 + dy] = srcColor;
-							}
-						}
-
-						interpCol = (PixelType)bicubicInterpolate(patch, px1,py1, px2,py2, px3,py3);
-						dstPixels[dstIndex] = interpCol;
-					}
-
-				}
-			}
-			break;
-	}
-
-	return true;
-}
-
-//----------------------------------------------------------------------
-template<typename PixelType>
-bool ofxVoxels_<PixelType>::pasteInto(ofxVoxels_<PixelType> &dst, int xTo, int yTo){
-	if (!(isAllocated()) || !(dst.isAllocated()) || getBytesPerPixel() != dst.getBytesPerPixel() || xTo>=dst.getWidth() || yTo>=dst.getHeight()) return false;
-
-	int bytesToCopyPerRow = (xTo + getWidth()<=dst.getWidth() ? getWidth() : dst.getWidth()-xTo) * getBytesPerPixel();
-	int columnsToCopy = yTo + getHeight() <= dst.getHeight() ? getHeight() : dst.getHeight()-yTo;
-	PixelType * dstPix = dst.getPixels() + ((xTo + yTo*dst.getWidth())*dst.getBytesPerPixel());
-	PixelType * srcPix = getPixels();
-	int srcStride = getWidth()*getBytesPerPixel();
-	int dstStride = dst.getWidth()*dst.getBytesPerPixel();
-
+	for(int i=0;i<pagesToCopy; i++){
 	for(int y=0;y<columnsToCopy; y++){
-		memcpy(dstPix,srcPix,bytesToCopyPerRow);
-		dstPix += dstStride;
-		srcPix += srcStride;
+		memcpy(dstVox,srcVox,bytesToCopyPerRow);
+		dstVox += dstStride;
+		srcVox += srcStride;
 	}
-
+	}
 	return true;
 }
+
 
 template class ofxVoxels_<char>;
 template class ofxVoxels_<unsigned char>;

@@ -126,6 +126,7 @@ public:
 	bool isStandardized() const;  // are width/height >= 0.0f
 	
 	float getArea() const;
+    float getPerimeter() const;
 	float getVolume() const;
 	//	float getAspectRatio() const;
 	

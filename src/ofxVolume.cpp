@@ -10,92 +10,42 @@ ofxVolume::ofxVolume()
 //--------------------------------------------------------------
 ofxVolume::~ofxVolume()
 {
-
 }
 
 void ofxVolume::load(string path)
 {
+	ofxImageSequencePlayer imageSequence;
 	imageSequence.init(path + "IM-0001-0", 3, ".tif", 0);
 	
 	// calculate ofxVolume size
-	volBox.w	= imageSequence.getWidth();
-    volBox.h	= imageSequence.getHeight();
-    volBox.d	= imageSequence.getSequenceLength();
+	w	= imageSequence.getWidth();
+    h	= imageSequence.getHeight();
+    d	= imageSequence.getSequenceLength();
 	
-	ofLogNotice("vizManager") << "setting up ofxVolume data buffer at " << volBox.w << "x" << volBox.h << "x" << volBox.d;
-    voxels = new unsigned char[(int) (volBox.w*volBox.h*volBox.d)];
-	
-	//fill out the array pixel in white for easy debugging
-	for (int i=0; i<volBox.w*volBox.h*volBox.d; i++ )
-	{
-		voxels[i]= (unsigned char) 255;
-	}
-	
-	// fill my array with pixels
-    for(int z=0; z<volBox.d; z++)
+	ofLogNotice("vizManager") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
+	unsigned char* voxels;
+	voxels = new unsigned char[(int) (w*h*d)];
+	// fill my array with voxels
+    for(int z=0; z<d; z++)
     {
         imageSequence.loadFrame(z);
 		int gradient = 0;
-		for(int y=0; y<volBox.h; y++)
+		for(int y=0; y<h; y++)
         {
-			for(int x=0; x<volBox.w; x++)
+			for(int x=0; x<w; x++)
 			{
-				if (x<volBox.w && y<volBox.h)
+				if (x<w && y<h)
 				{																// get values from image
-					int i = ((x + volBox.w*y) + z*volBox.w*volBox.h);			// the pointer position at Array
-					int sample = imageSequence.getPixels()[(int)(x+y*volBox.w)];		// the pixel on the image
-					voxels[i] = sample;
+					int i = ((x + y*w) + z*w*h);			// the pointer position at Array
+					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
+//					voxels[i] = sample;
+					voxels[i]=sample;
 					//					ofLogVerbose("vizManager") << sample << " ";
 				}
             }
         }
-    }
-}
-
-
-void ofxVolume::allocate(ofVec3f size)
-{
-	// set ofxVolume size
-	volBox.w	= size.x;
-    volBox.h	= size.y;
-    volBox.d	= size.z;
-	volSize		= size;
-	
-	ofLogNotice("vizManager") << "setting up ofxVolume data buffer at " << volBox.w << "x" << volBox.h << "x" << volBox.d;
-    voxels = new unsigned char[(int) (volBox.w*volBox.h*volBox.d*4)];
-	
-	/*
-	//fill out the array pixel in white for easy debugging
-	for (int i=0; i<volBox.w*volBox.h*volBox.d*4; i++ )
-	{
-		voxels[i]= (unsigned char) 55;
-	}
-	*/
-	
-/*
-	int max = 255;
-	ofColor myColor = ofColor(0,0,0,255);
-	// fill my array with pixels
-    for(int z=0; z<volBox.d; z++)
-    {
-		myColor= ofColor(myColor.r, myColor.g, z/volBox.d*max, myColor.a);
-		for(int y=0; y<volBox.h; y++)
-        {
-			myColor= ofColor(myColor.r, y/volBox.h*max, myColor.b, myColor.a);
-			for(int x=0; x<volBox.w; x++)
-			{
-				myColor= ofColor(y/volBox.w*max, myColor.g, myColor.b, myColor.a);
-
-				int i = ((x + volBox.w*y) + z*volBox.w*volBox.h)*4;			// the pointer position at Array
-//				int sample = imageSequence.getPixels()[x+y*volBox.w];		// the pixel on the image
-				voxels[i] = myColor.r;
-				voxels[i+1] = myColor.g;
-				voxels[i+2] = myColor.b;
-				voxels[i+3] = myColor.a;
-			}
-        }
-    }
-*/
+    }//end for
+	setFromVoxels(voxels, w, h, d, 1);
 }
 
 //--------------------------------------------------------------
@@ -107,33 +57,33 @@ void ofxVolume::setup(float bW, float bH)
 	// Needed to align the ofxVolume at the center of the box
 	// Attention! this is not correct..
 	// will give problems if W & H are not d same
-	halfH = (boxW - volBox.h) /2;
-	halfW = (boxW - volBox.w) /2;
-	halfD = (boxW - volBox.d) /2;
+	halfH = (boxW - h) /2;
+	halfW = (boxW - w) /2;
+	halfD = (boxW - d) /2;
 	
 	//allocate my pixls type of the image slices
-	coronalPixels.allocate(volBox.w, volBox.d, OF_IMAGE_GRAYSCALE);
+	coronalPixels.allocate(w, d, OF_IMAGE_GRAYSCALE);
 	coronalPixels.set(255);
-	sagittalPixels.allocate(volBox.d, volBox.h, OF_IMAGE_GRAYSCALE);
+	sagittalPixels.allocate(d, h, OF_IMAGE_GRAYSCALE);
 	sagittalPixels.set(255);
-	axialPixels.allocate(volBox.w, volBox.h, OF_IMAGE_GRAYSCALE);
+	axialPixels.allocate(w, h, OF_IMAGE_GRAYSCALE);
 	axialPixels.set(255);	
 }
 
 //--------------------------------------------------------------
-int ofxVolume::getVoxelValue(){
-	
+int ofxVolume::getVoxelValue()
+{
 	int value	=0;
-	for(int z=0; z<volBox.d; z++){
+	for(int z=0; z<d; z++){
 		if (z==axialS){
-			for(int y=0; y<volBox.h; y++){
+			for(int y=0; y<h; y++){
 				if (y==coronalS) {
-					for(int x=0; x<volBox.w; x++){
+					for(int x=0; x<w; x++){
 						if (x==sagittalS){
-							int line = y*volBox.w;
-							int page = z*volBox.w*volBox.h;
+							int line = y*w;
+							int page = z*w*h;
 							int i = x + line + page;					// the pointer position at Array
-							value= voxels[i];							// the pixel on the image
+							value= getVoxels()[i];							// the pixel on the image
 						}
 					}
 				}
@@ -149,20 +99,20 @@ int ofxVolume::getVoxelValue(){
 }
 
 //--------------------------------------------------------------
-ofVec3f ofxVolume::getVoxelCoordinates(int _index){
-	
+ofVec3f ofxVolume::getVoxelCoordinates(int _index)
+{
 	ofVec3f value (0);
-	for(int z=0; z<volBox.d; z++){
+	for(int z=0; z<d; z++){
 		value.z=z;
 		if (z==axialS){
-			for(int y=0; y<volBox.h; y++){
+			for(int y=0; y<h; y++){
 				value.y=y;
 				if (y==coronalS) {
-					for(int x=0; x<volBox.w; x++){
+					for(int x=0; x<w; x++){
 						value.x=x;
 
-						int line = y*volBox.w;
-						int page = z*volBox.w*volBox.h;
+						int line = y*w;
+						int page = z*w*h;
 						int i = x + line + page;
 
 						if (_index==i){
@@ -175,7 +125,6 @@ ofVec3f ofxVolume::getVoxelCoordinates(int _index){
 			}
 		}
 	}
-	
 }
 
 //--------------------------------------------------------------
@@ -186,24 +135,24 @@ bool ofxVolume::getVoxelCoordAndVal(int _index, ofVec3f& _coord, int& _val){
 	int page=0;
 	int index=0;
 	
-	for(int z=0; z<volBox.d; z++){
+	for(int z=0; z<d; z++){
 		value.z=z;
 		
-		for(int y=0; y<volBox.h; y++){
+		for(int y=0; y<h; y++){
 			value.y=y;
 			
-			for(int x=0; x<volBox.w; x++){
+			for(int x=0; x<w; x++){
 				value.x=x;
 				
-				row = y*volBox.w;
-				page = z*volBox.w*volBox.h;
+				row = y*w;
+				page = z*w*h;
 				index = x + row + page;
 				
 				if (_index==index){
 					value= ofVec3f(x,y,z);
 
 					_coord= value;
-					_val= voxels[index];
+					_val= getVoxels()[index];
 //					ofLogVerbose("ofxVolume") << "voxelCoord= " << _coord;
 //					ofLogVerbose("ofxVolume") << "voxelVal= " << _val;
 					return true;
@@ -220,14 +169,14 @@ bool ofxVolume::getVoxelCoordAndVal(int _index, ofVec3f& _coord, int& _val){
 int ofxVolume::getVoxelNumber(){
 	
 	int value	=0;
-	for(int z=0; z<volBox.d; z++){
+	for(int z=0; z<d; z++){
 		if (z==axialS){
-			for(int y=0; y<volBox.h; y++){
+			for(int y=0; y<h; y++){
 				if (y==coronalS) {
-					for(int x=0; x<volBox.w; x++){
+					for(int x=0; x<w; x++){
 						if (x==sagittalS){
-							int line = y*volBox.w;
-							int page = z*volBox.w*volBox.h;
+							int line = y*w;
+							int page = z*w*h;
 							int i = x + line + page;			// the pointer position at Array
 							value= i;							// the pixel on the image
 						}
@@ -245,42 +194,41 @@ int ofxVolume::getVoxelNumber(){
 //--------------------------------------------------------------
 void ofxVolume::redraw(slice vP, int depth)
 {
-
-	// try clamp the value like this out = MIN(volBox.h, MAX(in, 0));
+	// try clamp the value like this out = MIN(h, MAX(in, 0));
 	if(vP==CORONAL)
 	{
 		coronalS = depth;	// maybe talairch will need unclamped position??
-		if(depth>=0 && depth<volBox.h)
+		if(depth>=0 && depth<h)
 		{
 			insideCoronal=true;
 			redrawCoronal();
 		}else{
 			insideCoronal=false;
-//			coronalS = MIN(volBox.h, MAX(depth, 0));
+//			coronalS = MIN(h, MAX(depth, 0));
 		}
 	}
 	else if(vP==SAGITTAL)
 	{
 		sagittalS = depth;
-		if(depth>=0 && depth<volBox.w)
+		if(depth>=0 && depth<w)
 		{
 			insideSagittal=true;
 			redrawSagittal();
 		}else{
 			insideSagittal=false;
-//			sagittalS = MIN(volBox.w, MAX(depth, 0));
+//			sagittalS = MIN(w, MAX(depth, 0));
 		}
 	}
 	else if (vP==AXIAL)
 	{
 		axialS = depth;
-		if(depth>=0 && depth<volBox.d)
+		if(depth>=0 && depth<d)
 		{
 			insideAxial=true;
 			redrawAxial();
 		}else{
 			insideAxial=false;
-//			axialS = MIN(volBox.d, MAX(depth, 0));
+//			axialS = MIN(d, MAX(depth, 0));
 		}
 	}
 }
@@ -316,88 +264,92 @@ void ofxVolume::drawBox()
 //--------------------------------------------------------------
 void ofxVolume::redrawCoronal()
 {
-	for(int z=0; z<volBox.d; z++)
+	for(int z=0; z<d; z++)
 	{
-		for(int y=0; y<volBox.h; y++)
+		for(int y=0; y<h; y++)
 		{
 			if (y==coronalS){
-				for(int x=0; x<volBox.w; x++)
+				for(int x=0; x<w; x++)
 				{
-					int line = y*volBox.w;
-					int page = z*volBox.w*volBox.h;
+					int line = y*w;
+					int page = z*w*h;
 					int i = x + line + page;					// the position at the pixel array
-					coronalPixels[x+(z*volBox.w)] = voxels[i];	// get the correct voxel and put it to the pixel array
+					coronalPixels[x+(z*w)] = getVoxels()[i];	// get the correct voxel and put it to the pixel array
 				}
 			}
 		}
 	}
 	
 	//draw image
-	coronal.setFromPixels(coronalPixels.getPixels(), volBox.w, volBox.d, OF_IMAGE_GRAYSCALE);
+	coronal.setFromPixels(coronalPixels.getPixels(), w, d, OF_IMAGE_GRAYSCALE);
 	coronal.mirror(true, false);
 }
 
 //--------------------------------------------------------------
 void ofxVolume::redrawSagittal()
 {
-	for(int z=0; z<volBox.d; z++)
+	for(int z=0; z<d; z++)
     {
-		for(int y=0; y<volBox.h; y++)
+		for(int y=0; y<h; y++)
         {
-			for(int x=0; x<volBox.w; x++)
+			for(int x=0; x<w; x++)
 			{
 				if (x==sagittalS){
-					int line = y*volBox.w;
-					int page = z*volBox.w*volBox.h;
+					int line = y*w;
+					int page = z*w*h;
 					int i = x + line + page;					// the position at the pixel array
-					sagittalPixels[z+(y*volBox.d)] = voxels[i];	// get the correct voxel and put it to the pixel array
+					sagittalPixels[z+(y*d)] = getVoxels()[i];	// get the correct voxel and put it to the pixel array
 				}
 			}
 		}
     }
 	
 	//draw image
-	sagittal.setFromPixels(sagittalPixels.getPixels(), volBox.d, volBox.h, OF_IMAGE_GRAYSCALE);
+	sagittal.setFromPixels(sagittalPixels.getPixels(), d, h, OF_IMAGE_GRAYSCALE);
 	sagittal.rotate90(3);
 }
 
 //--------------------------------------------------------------
 void ofxVolume::redrawAxial()
 {
-	for(int z=0; z<volBox.d; z++)
+	for(int z=0; z<d; z++)
     {
 		if (z==axialS){
-			for(int y=0; y<volBox.h; y++)
+			for(int y=0; y<h; y++)
 			{
-				for(int x=0; x<volBox.w; x++)
+				for(int x=0; x<w; x++)
 				{
-					int line = y*volBox.w;
-					int page = z*volBox.w*volBox.h;
+					int line = y*w;
+					int page = z*w*h;
 					int i = x + line + page;			// the position at the pixel array
-					axialPixels[x+line] = voxels[i];	// get the correct voxel and put it to the pixel array
+					axialPixels[x+line] = getVoxels()[i];	// get the correct voxel and put it to the pixel array
 				}
 			}
 		}
     }
 	
 	//draw image
-	axial.setFromPixels(axialPixels.getPixels(), volBox.w, volBox.h, OF_IMAGE_GRAYSCALE);
+	axial.setFromPixels(axialPixels.getPixels(), w, h, OF_IMAGE_GRAYSCALE);
 }
 
+/*
+//--------------------------------------------------------------
+ofVec3f ofxVolume::getSize(){
+	return this->size;
+}
+//--------------------------------------------------------------
+ofVec3f ofxVolume::getPos(){
+	return this->position;
+}
+*/
+/*
+ //--------------------------------------------------------------
+ template<typename PixelType>
+ PixelType* ofxVolume::getVoxels(){
+ return voxels.getVoxels();
+ }
 
-//--------------------------------------------------------------
-ofVec3f ofxVolume::getVolSize(){
-	return volSize;
-}
-//--------------------------------------------------------------
-ofVec3f ofxVolume::getVolPos(){
-	return volPos;
-}
-
-//--------------------------------------------------------------
-unsigned char* ofxVolume::getVoxels(){
-	return voxels;
-}
+*/
 
 //--------------------------------------------------------------
 void ofxVolume::clearSelected(){
@@ -405,7 +357,6 @@ void ofxVolume::clearSelected(){
 }
 //--------------------------------------------------------------
 void ofxVolume::selectVoxels(ofxBox& box){
-	
 //	selectedVoxels.pushBack(getVoxelsinBox(box));
 }
 //--------------------------------------------------------------
@@ -456,20 +407,20 @@ vector <ofVec3f> ofxVolume::getVoxelsinRadius(ofVec3f& _coord, float& _radius){
 	int page		=0;
 	int index		=0;
 
-	for(int z=0; z<volBox.d; z++){
+	for(int z=0; z<d; z++){
 		coord.z=z;
 		
 		if (z==_coord.z){
-			for(int y=0; y<volBox.h; y++){
+			for(int y=0; y<h; y++){
 				coord.y=y;
 				
 				if (y==_coord.y) {
-					for(int x=0; x<volBox.w; x++){
+					for(int x=0; x<w; x++){
 						coord.x=x;
 						
 						if (x==_coord.x){
-							row = y*volBox.w;
-							page = z*volBox.w*volBox.h;
+							row = y*w;
+							page = z*w*h;
 							index = x + row + page;
 							
 							coord= ofVec3f(x,y,z);
@@ -504,9 +455,9 @@ bool ofxVolume::inside(ofVec3f _coord){
 	if (_coord.y<0) return false;
 	if (_coord.z<0) return false;
 	
-	if (_coord.x>volBox.w)	return false;
-	if (_coord.y>volBox.h) return false;
-	if (_coord.z>volBox.d)	return false;
+	if (_coord.x>w)	return false;
+	if (_coord.y>h) return false;
+	if (_coord.z>d)	return false;
 	
 	return true;
 }
@@ -517,7 +468,10 @@ ofVec3f ofxVolume::getNormalizedCoords(ofVec3f _coord){
 	
 }
 
+void ofxVolume::destroy(){
 
+	
+}
 
 
 
