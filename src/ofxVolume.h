@@ -20,8 +20,9 @@ public:
 	
 	ofxVolume();
     virtual ~ofxVolume();
-
-	void load(string path="");
+	
+	void loadColor(string path="");
+	void loadMono(string path="");
 	void setup(float bW, float bH);
 	void redraw(slice vP, int depth);
 	void destroy();

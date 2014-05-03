@@ -12,7 +12,49 @@ ofxVolume::~ofxVolume()
 {
 }
 
-void ofxVolume::load(string path)
+void ofxVolume::loadColor(string path)
+{
+	ofxImageSequencePlayer imageSequence;
+	imageSequence.init(path + "IM-0001-0", 3, ".tif", 0);
+	
+	int channels =4;
+	
+	// calculate ofxVolume size
+	w	= imageSequence.getWidth();
+    h	= imageSequence.getHeight();
+    d	= imageSequence.getSequenceLength();
+	
+	ofLogNotice("vizManager") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
+	unsigned char* voxels;
+	voxels = new unsigned char[(int) (w*h*d)*channels];
+	// fill my array with voxels
+    for(int z=0; z<d; z++)
+    {
+        imageSequence.loadFrame(z);
+		int gradient = 0;
+		for(int y=0; y<h; y++)
+        {
+			for(int x=0; x<w; x++)
+			{
+				if (x<w && y<h)
+				{																// get values from image
+					int i = ((x + y*w) + z*w*h)*channels;			// the pointer position at Array
+					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
+					ofColor c;
+					c.setHsb(sample, 255-sample, sample);
+					
+					voxels[i] = c.r;
+					voxels[i+1] = c.g;
+					voxels[i+2] = c.b;
+					voxels[i+3] = sample;
+					//					ofLogVerbose("vizManager") << sample << " ";
+				}
+            }
+        }
+    }//end for
+	setFromVoxels(voxels, w, h, d, 4);
+}
+void ofxVolume::loadMono(string path)
 {
 	ofxImageSequencePlayer imageSequence;
 	imageSequence.init(path + "IM-0001-0", 3, ".tif", 0);
@@ -38,7 +80,7 @@ void ofxVolume::load(string path)
 				{																// get values from image
 					int i = ((x + y*w) + z*w*h);			// the pointer position at Array
 					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
-//					voxels[i] = sample;
+					//					voxels[i] = sample;
 					voxels[i]=sample;
 					//					ofLogVerbose("vizManager") << sample << " ";
 				}

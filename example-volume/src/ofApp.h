@@ -17,7 +17,10 @@ public:
 	void initVolume();
 	void initVolumeRendering();
 
-    void keyPressed  (int key);
+	void initVolume_OLD();
+	void draw_OLD();
+    
+	void keyPressed  (int key);
     void keyReleased(int key);
     void mouseMoved(int x, int y );
     void mouseDragged(int x, int y, int button);
@@ -51,4 +54,7 @@ public:
 	float	boxW, boxH;
 
 	string		date;
+
+//____________________initVolume_OLD
+    ofxImageSequencePlayer imageSequence;
 };
