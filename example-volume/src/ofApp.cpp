@@ -1,7 +1,7 @@
-#include "testApp.h"
+#include "ofApp.h"
 
 //--------------------------------------------------------------
-void testApp::setup()
+void ofApp::setup()
 {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 //    ofSetFrameRate(20);
@@ -13,7 +13,7 @@ void testApp::setup()
 	
 	// GIF
 	gifEncoder.setup(ofGetWidth(), ofGetHeight(), 0.02, 255);
-    ofAddListener(ofxGifEncoder::OFX_GIF_SAVE_FINISHED, this, &testApp::onGifSaved);
+    ofAddListener(ofxGifEncoder::OFX_GIF_SAVE_FINISHED, this, &ofApp::onGifSaved);
 	
 	// shader
 	FBOq		= 1;
@@ -53,7 +53,7 @@ void testApp::setup()
 }
 
 //--------------------------------------------------------------
-void testApp::initVolume()
+void ofApp::initVolume()
 {
 	// Init Volume
 	volume.load("volumes/Colin27T1_tight/");
@@ -70,7 +70,7 @@ void testApp::initVolume()
 
 
 //--------------------------------------------------------------
-void testApp::initVolumeRendering()
+void ofApp::initVolumeRendering()
 {
 	// Init Volume Rendering
 	// don't use pow2 now! the shader is not working!!
@@ -85,14 +85,14 @@ void testApp::initVolumeRendering()
 }
 
 //--------------------------------------------------------------
-void testApp::update()
+void ofApp::update()
 {
     ofSetWindowTitle(ofToString(ofGetFrameRate()));
 	gifEncoder.update();
 }
 
 //--------------------------------------------------------------
-void testApp::draw()
+void ofApp::draw()
 {
 //	ofBackgroundGradient(100, 50);
 
@@ -106,13 +106,13 @@ void testApp::draw()
 //	ofRectangle();
 }
 
-void testApp::onGifSaved(string &fileName) {
+void ofApp::onGifSaved(string &fileName) {
     cout << "gif saved as " << fileName << endl;
 	gifEncoder.reset();
 }
 
 //--------------------------------------------------------------
-void testApp::keyPressed(int key)
+void ofApp::keyPressed(int key)
 {
 
     switch(key)
@@ -139,7 +139,7 @@ void testApp::keyPressed(int key)
 //			volume.getVoxels().rotate90(1);
 			volumeRender.setVolume(&volume, false, GL_LUMINANCE);
 //			volumeRender.setVolume(volume.getVoxelsData());
-			volumeRender.setup(&volume, false, GL_LUMINANCE);
+//			volumeRender.setup(&volume, false, GL_LUMINANCE);
 			break;
 			
 		case 't':
@@ -218,60 +218,60 @@ void testApp::keyPressed(int key)
 }
 
 //--------------------------------------------------------------
-void testApp::keyReleased(int key)
+void ofApp::keyReleased(int key)
 {
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseMoved(int x, int y )
+void ofApp::mouseMoved(int x, int y )
 {
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseDragged(int x, int y, int button)
+void ofApp::mouseDragged(int x, int y, int button)
 {
 
 }
 
 //--------------------------------------------------------------
-void testApp::mousePressed(int x, int y, int button)
+void ofApp::mousePressed(int x, int y, int button)
 {
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseReleased(int x, int y, int button)
+void ofApp::mouseReleased(int x, int y, int button)
 {
 
 }
 
 //--------------------------------------------------------------
-void testApp::windowResized(int w, int h)
+void ofApp::windowResized(int w, int h)
 {
 
 }
 
 //--------------------------------------------------------------
-void testApp::gotMessage(ofMessage msg)
+void ofApp::gotMessage(ofMessage msg)
 {
 
 }
 
 //--------------------------------------------------------------
-void testApp::dragEvent(ofDragInfo dragInfo)
+void ofApp::dragEvent(ofDragInfo dragInfo)
 {
 
 }
 
 //--------------------------------------------------------------
-void testApp::exit(){
+void ofApp::exit(){
     gifEncoder.exit();
 }
 
 //--------------------------------------------------------------
-void testApp::drawLabels()
+void ofApp::drawLabels()
 {
     ofSetColor(0,0,0,64);
     ofRect(0,0,270,190);
@@ -295,7 +295,7 @@ void testApp::drawLabels()
 }
 
 //--------------------------------------------------------------
-void testApp::selectVoxels()
+void ofApp::selectVoxels()
 {
 	vector<ofxBox> boxes;
 	
