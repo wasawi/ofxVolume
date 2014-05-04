@@ -60,4 +60,5 @@ public:
 
 //____________________initVolume_OLD
     ofxImageSequencePlayer imageSequence;
+	bool bNew;
 };

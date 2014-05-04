@@ -26,7 +26,7 @@ void ofxVolume::loadColor(string path)
     h	= imageSequence.getHeight();
     d	= imageSequence.getSequenceLength();
 	
-	ofLogNotice("vizManager") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
+	ofLogNotice("ofxVolume::loadColor") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
 	unsigned char* voxels;
 	voxels = new unsigned char[(int) (w*h*d)*channels];
 	// fill my array with voxels
@@ -67,7 +67,7 @@ void ofxVolume::loadMono(string path)
     h	= imageSequence.getHeight();
     d	= imageSequence.getSequenceLength();
 	
-	ofLogNotice("vizManager") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
+	ofLogNotice("ofxVolume::loadMono") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
 	unsigned char* voxels;
 	voxels = new unsigned char[(int) (w*h*d)];
 	// fill my array with voxels

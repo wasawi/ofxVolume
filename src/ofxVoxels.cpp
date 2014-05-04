@@ -330,6 +330,16 @@ template<typename PixelType>
 bool ofxVoxels_<PixelType>::isAllocated() const{
 	return bAllocated;
 }
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::isPow2() const{
+	bool bPow2;
+	bPow2 = (isPowerOfTwo(width) && isPowerOfTwo(height) && isPowerOfTwo(depth)) ? true : false;
+	return bPow2;
+}
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::isPowerOfTwo(int x) const{
+    return (x != 0) && ((x & (x - 1)) == 0);
+}
 
 template<typename PixelType>
 int ofxVoxels_<PixelType>::getWidth() const{

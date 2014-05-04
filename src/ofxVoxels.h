@@ -81,7 +81,8 @@ public:
 	PixelType& operator[](int pos);
 
 	bool isAllocated() const;
-
+	bool isPow2() const;
+	
 	int getWidth() const;
 	int getHeight() const;
 	int getDepth() const;
@@ -109,6 +110,7 @@ private:
 
 	template<typename SrcType>
 	void copyFrom( const ofxVoxels_<SrcType>& mom );
+	bool isPowerOfTwo(int x) const;
 	
 	PixelType * voxels;
 	int 	width;
@@ -118,7 +120,6 @@ private:
 	int 	channels; // 1, 3, 4 channels per pixel (grayscale, rgb, rgba)
 	bool	bAllocated;
 	bool	voxelsOwner;			// if set from external data don't delete it
-
 };
 
 

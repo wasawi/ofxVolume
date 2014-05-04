@@ -61,7 +61,6 @@ private:
 	bool inside(ofxPoint _coord);
 	
 	int w,h,d;
-	int renderWidth, renderHeight;
 	int halfH;
 	int halfW;
 	int halfD;
