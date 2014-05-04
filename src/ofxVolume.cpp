@@ -4,6 +4,7 @@
 
 #include "ofxVolume.h"
 
+/*
 ofxVolume::ofxVolume()
 {
 }
@@ -11,6 +12,7 @@ ofxVolume::ofxVolume()
 ofxVolume::~ofxVolume()
 {
 }
+*/
 
 void ofxVolume::loadColor(string path)
 {
@@ -41,6 +43,7 @@ void ofxVolume::loadColor(string path)
 					int i = ((x + y*w) + z*w*h)*channels;			// the pointer position at Array
 					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
 					ofColor c;
+					//c.set(sample);
 					c.setHsb(sample, 255-sample, sample);
 					
 					voxels[i] = c.r;
@@ -77,8 +80,8 @@ void ofxVolume::loadMono(string path)
 			for(int x=0; x<w; x++)
 			{
 				if (x<w && y<h)
-				{																// get values from image
-					int i = ((x + y*w) + z*w*h);			// the pointer position at Array
+				{													// get values from image
+					int i = ((x + y*w) + z*w*h);					// the pointer position at Array
 					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
 					//					voxels[i] = sample;
 					voxels[i]=sample;

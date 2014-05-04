@@ -17,9 +17,10 @@ enum slice
 
 class ofxVolume : public ofxVoxels{
 public:
-	
+	/*
 	ofxVolume();
     virtual ~ofxVolume();
+	*/
 	
 	void loadColor(string path="");
 	void loadMono(string path="");

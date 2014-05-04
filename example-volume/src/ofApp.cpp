@@ -32,11 +32,12 @@ void ofApp::setup()
 	blabels = true;
 	
 	// Init Volume
-//	initVolume();
-	initVolume_OLD();
+	initVolume();
+//	initVolume_OLD();
+//	initVolumeChar();
 	
 	// Volume rendering
-//	initVolumeRendering();
+	initVolumeRendering();
 }
 
 //--------------------------------------------------------------
@@ -51,14 +52,27 @@ void ofApp::initVolume()
 //	volume.mirror(true, false, false);
 
 	
-	ofVec3f volSize(100);
-//	volume.allocate(volSize, OF_PIXELS_MONO);
+//	ofVec3f volSize(50);
+//	volume.allocate(volSize, OF_PIXELS_RGBA);
 //	volume.setup(boxW, boxH);
 	
 	// camera
     cam.setDistance(1000);
     cam.enableMouseInput();
 
+}
+//--------------------------------------------------------------
+void ofApp::initVolumeRendering()
+{
+	// Init Volume Rendering
+    volumeRender.setup(&volume, ofVec3f(1,1,1), true, GL_RGBA);
+	//	cout << volume.getWidth();
+	
+	volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
+	//	volumeRender.setVolumeTextureFilterMode(GL_LINEAR);
+	//	volumeRender.setVolumeTextureFilterMode(GL_NEAREST);
+	volumeRender.setClipDepth(clipPlaneDepth);
+	//	volumeRender.setSlices(&uiClamp);
 }
 
 //--------------------------------------------------------------
@@ -109,18 +123,49 @@ void ofApp::initVolume_OLD()
 }
 
 //--------------------------------------------------------------
-void ofApp::initVolumeRendering()
+void ofApp::initVolumeChar()
 {
+	int w, h, d;
+
+	
+	imageSequence.init("volumes/head/cthead-8bit",3,".tif", 1);
+//	imageSequence.init("volumes/Colin27T1_tight/IM-0001-0",3,".tif", 1);
+    w = imageSequence.getWidth();
+    h = imageSequence.getHeight();
+    d = imageSequence.getSequenceLength();
+	
+    cout << "setting up volume data buffer at " << w << "x" << h << "x" << d <<"\n";
+	
+    volumeData = new unsigned char[w*h*d*4];
+	
+    for(int z=0; z<d; z++)
+    {
+        imageSequence.loadFrame(z);
+        for(int x=0; x<w; x++)
+        {
+            for(int y=0; y<h; y++)
+            {
+                // convert from greyscale to RGBA, false color
+                int i4 = ((x+w*y)+z*w*h)*4;
+                int sample = imageSequence.getPixels()[x+y*w];
+                ofColor c;
+                c.setHsb(sample, 255-sample, sample);
+				
+                volumeData[i4] = c.r;
+                volumeData[i4+1] = c.g;
+                volumeData[i4+2] = c.b;
+                volumeData[i4+3] = sample;
+            }
+        }
+    }
+	
+	/*
 	// Init Volume Rendering
 	// don't use pow2 now! the shader is not working!!
-    volumeRender.setup(&volume, true, GL_RGBA);
-//	cout << volume.getWidth();
-	
+    volumeRender.setup(volumeData, ofVec3f(w,h,d), ofVec3f(1,1,1), true, GL_RGBA);
 	volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
-//	volumeRender.setVolumeTextureFilterMode(GL_LINEAR);
-//	volumeRender.setVolumeTextureFilterMode(GL_NEAREST);
 	volumeRender.setClipDepth(clipPlaneDepth);
-//	volumeRender.setSlices(&uiClamp);
+	*/
 }
 
 //--------------------------------------------------------------
@@ -143,7 +188,7 @@ void ofApp::draw_OLD()
 //--------------------------------------------------------------
 void ofApp::draw()
 {
-	/*
+
 	ofSetColor(255);
 	cam.begin();
 	volumeRender.update();
@@ -152,8 +197,8 @@ void ofApp::draw()
 	
 	
 	if (blabels) drawLabels();
-	 */
-	draw_OLD();
+
+//	draw_OLD();
 }
 
 void ofApp::onGifSaved(string &fileName) {
@@ -185,9 +230,10 @@ void ofApp::keyPressed(int key)
 			ofToggleFullscreen();
 			break;
 		case 'a':
-//			volume.getVoxels().mirror(false, true, false);
-//			volume.getVoxels().rotate90(1);
-			volumeRender.setVolume(&volume, false, GL_LUMINANCE);
+			volume.mirror(false, true, false);
+//			volume.rotate90(1);
+			volumeRender.setVolume(&volume, true, GL_RGBA);
+//			volumeRender.setVolume(volumeData, volume.getSize(), false, GL_RGBA);
 //			volumeRender.setVolume(volume.getVoxelsData());
 //			volumeRender.setup(&volume, false, GL_LUMINANCE);
 			break;

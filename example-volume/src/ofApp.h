@@ -16,7 +16,9 @@ public:
 	void drawLabels();
 	void initVolume();
 	void initVolumeRendering();
-
+	
+	void initVolumeChar();
+	
 	void initVolume_OLD();
 	void draw_OLD();
     
@@ -44,6 +46,7 @@ public:
 	
 	// Volume
 	ofxVolume	volume;
+	unsigned char * volumeData;	
 	
 	// Volume rendering UI vars
 	float FBOq, Zq, thresh, density, dithering;
