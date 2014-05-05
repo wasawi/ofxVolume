@@ -935,29 +935,39 @@ float ofxVoxels_<PixelType>::bicubicInterpolate (const float *patch, float x,flo
 }
 */
 
-//---------------------------------------------------------------------- TODO
+//---------------------------------------------------------------------- OK.Tested!
 template<typename PixelType>
 bool ofxVoxels_<PixelType>::pasteInto(ofxVoxels_<PixelType> &dst, int xTo, int yTo, int zTo){
-	if (!(isAllocated()) || !(dst.isAllocated()) ||										// check if voxels are allocated,
-		getBytesPerVoxel() != dst.getBytesPerVoxel() ||									// if bytes are same
-		xTo>=dst.getWidth() || yTo>=dst.getHeight() || zTo>=dst.getDepth()) return false;// and if position is within bounds
+	if (!(isAllocated()) || !(dst.isAllocated()) ||										// check if voxels are not allocated,
+		getBytesPerVoxel() != dst.getBytesPerVoxel() ||									// if bytes are different
+		xTo>=dst.getWidth() || yTo>=dst.getHeight() || zTo>=dst.getDepth()) return false;// and if dest position is within bounds
 
+	// the size of each row. this is the amount of bytes we will copy per row.
 	int bytesToCopyPerRow	= (xTo + getWidth() <=dst.getWidth() ? getWidth() : dst.getWidth() -xTo) * getBytesPerVoxel();
-	int columnsToCopy		= yTo + getHeight() <= dst.getHeight() ? getHeight() : dst.getHeight() -yTo;
+	// rowsToCopy is the amount of rows to copy
+	int rowsToCopy			= yTo + getHeight() <= dst.getHeight() ? getHeight() : dst.getHeight() -yTo;
+	// pagesToCopy is the amount of pages to copy
 	int pagesToCopy			= zTo + getDepth() <= dst.getDepth() ? getDepth() :	dst.getDepth() -zTo;
 	
-	PixelType * dstVox = dst.getVoxels() + ((xTo + yTo*dst.getWidth())*dst.getBytesPerVoxel());
+	// put dest at the correct initial position if xTo/yTo/zTo is not zero.
+	PixelType * dstVox = dst.getVoxels() + ((xTo + (yTo*dst.getWidth()) + (zTo*dst.getWidth()*dst.getHeight()) )*dst.getBytesPerVoxel());
+	// src is at initial position. no need to move.
 	PixelType * srcVox = getVoxels();
 	
-	int srcStride = getWidth() * getBytesPerVoxel();
-	int dstStride = dst.getWidth() * dst.getBytesPerVoxel();
+	// the size of each row
+	int srcStrideW = getWidth() * getBytesPerVoxel();
+	int dstStrideW = dst.getWidth() * dst.getBytesPerVoxel();
 
+	// the size of each page
+	int dstStrideH =  dst.getWidth() * (dst.getHeight()-getHeight()) * dst.getBytesPerVoxel();
+	
 	for(int i=0;i<pagesToCopy; i++){
-	for(int y=0;y<columnsToCopy; y++){
+	for(int y=0;y<rowsToCopy; y++){
 		memcpy(dstVox,srcVox,bytesToCopyPerRow);
-		dstVox += dstStride;
-		srcVox += srcStride;
+		srcVox += srcStrideW;	// jump to next row
+		dstVox += dstStrideW;	// jump to next row
 	}
+		dstVox += dstStrideH;	// jump to next page
 	}
 	return true;
 }
