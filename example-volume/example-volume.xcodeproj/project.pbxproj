@@ -71,6 +71,10 @@
 /* Begin PBXFileReference section */
 		08CFC5DD191463E700BEAEE1 /* ofxGifEncoder.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxGifEncoder.cpp; sourceTree = "<group>"; };
 		08CFC5DE191463E700BEAEE1 /* ofxGifEncoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxGifEncoder.h; sourceTree = "<group>"; };
+		08CFC5EC19171BC300BEAEE1 /* ofxVolumetrics.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = ofxVolumetrics.frag; sourceTree = "<group>"; };
+		08CFC5ED19171BC300BEAEE1 /* ofxVolumetrics.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = ofxVolumetrics.vert; sourceTree = "<group>"; };
+		08CFC5EE19171BC300BEAEE1 /* ofxVolumetricsOriginal.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = ofxVolumetricsOriginal.frag; sourceTree = "<group>"; };
+		08CFC5EF19171BC300BEAEE1 /* ofxVolumetricsOriginal.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = ofxVolumetricsOriginal.vert; sourceTree = "<group>"; };
 		0DE82F34CE3C7E76904AEB80 /* Ray.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = Ray.h; path = ../../../addons/ofxRay/src/ofxRay/Ray.h; sourceTree = SOURCE_ROOT; };
 		13120E09450F7293A154AEE1 /* Projector.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Projector.cpp; path = ../../../addons/ofxRay/src/ofxRay/Projector.cpp; sourceTree = SOURCE_ROOT; };
 		1EE18EFAFFDBA09259EAF8E1 /* ofxVolume.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxVolume.cpp; path = ../../../addons/ofxVolume/src/ofxVolume.cpp; sourceTree = SOURCE_ROOT; };
@@ -163,9 +167,22 @@
 			path = ../../ofxGifEncoder/src;
 			sourceTree = "<group>";
 		};
+		08CFC5EB19171BC300BEAEE1 /* shaders */ = {
+			isa = PBXGroup;
+			children = (
+				08CFC5EC19171BC300BEAEE1 /* ofxVolumetrics.frag */,
+				08CFC5ED19171BC300BEAEE1 /* ofxVolumetrics.vert */,
+				08CFC5EE19171BC300BEAEE1 /* ofxVolumetricsOriginal.frag */,
+				08CFC5EF19171BC300BEAEE1 /* ofxVolumetricsOriginal.vert */,
+			);
+			name = shaders;
+			path = ../../ofxVolumetrics/src/shaders;
+			sourceTree = "<group>";
+		};
 		1CC46975986F85DB381A19B6 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				08CFC5EB19171BC300BEAEE1 /* shaders */,
 				F95DAD8D4E1816602C123E10 /* ofxImageSequencePlayer.h */,
 				EE68D117096A7022E761A462 /* ofxTexture3d.cpp */,
 				FBC767F38722907A75D7667B /* ofxTexture3d.h */,

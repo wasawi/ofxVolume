@@ -44,13 +44,15 @@ void ofApp::setup()
 void ofApp::initVolume()
 {
 	// Init Volume
-	volume.loadColor("volumes/Colin27T1_tight/");
+//	volume.loadColor("volumes/Colin27T1_tight/");
+	volume.loadColorPow2("volumes/Colin27T1_tight/");
 	//	volume.loadColor("volumes/head/cthead-8bit/");
 	//	volume.load("volumes/talairach_nii/");
 	
 	// Init Volume Rendering
     volumeRender.setup(&volume, ofVec3f(1,1,1), true, GL_RGBA);
 	volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
+	volumeRender.setDithering(1);
 	volumeRender.setClipDepth(clipPlaneDepth);
 	bNew = true;
 }
@@ -143,13 +145,20 @@ void ofApp::keyPressed(int key)
 			ofToggleFullscreen();
 			break;
 		case 'a':
-			volume.mirror(false, true, false);
-			volume.swapRgb();
+//			volume.mirror(false, true, false);
+//			volume.swapRgb();
+			volume.colourRandomVoxels(200);
 //			volume.setColor(ofColor::grey);
+			volumeRender.setVolume(&volume, true, GL_RGBA);
+
+//			cout << "size = "<<volume.getTotalSize() << endl;
+//			volume.setImageType(OF_IMAGE_GRAYSCALE);
+//			cout << "size = "<<volume.getTotalSize() << endl;
 			//			volume.rotate90(1);
 //			cout << volume.getWidth() <<"x"<<volume.getHeight() <<"x"<<volume.getDepth() <<"\n";
 //			cout << imageSequence.getWidth() <<"x"<<imageSequence.getHeight() <<"x"<<imageSequence.getSequenceLength() <<"\n";
-			volumeRender.setVolume(&volume, true, GL_RGBA);
+//			volumeRender.setup(&volume, ofVec3f(1,1,1), true, GL_LUMINANCE);
+//			volumeRender.setVolume(&volume, true, GL_LUMINANCE);
 //			volumeRender.updateVolumeData(volumeData, imageSequence.getWidth(), imageSequence.getHeight(), imageSequence.getSequenceLength(),0,0,0);
 /*			if (bNew){
 //				volumeRender.setVolume(&volume, true, GL_RGBA);
@@ -300,9 +309,7 @@ void ofApp::drawLabels()
     ofRect(0,0,270,190);
     ofSetColor(255,255,255,255);
 
-	ofDrawBitmapString("a" ,20,20);
-
-/*    ofDrawBitmapString(
+    ofDrawBitmapString(
 					   "fps: " + ofToString(ofGetFrameRate())+ "\n" +
 					   "volume dimensions: " + ofToString(volumeRender.getVolumeWidth()) +
 					   "x" + ofToString(volumeRender.getVolumeHeight()) +
@@ -317,7 +324,7 @@ void ofApp::drawLabels()
 					   "azimuth:            " + ofToString(azimuth) + "\n" +
 					   "elevation:          " + ofToString(elevation)
 					   ,20,20);
-*/
+
 }
 
 //--------------------------------------------------------------

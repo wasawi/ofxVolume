@@ -23,6 +23,7 @@ public:
 	*/
 	
 	void loadColor(string path="");
+	void loadColorPow2(string path="");
 	void loadMono(string path="");
 	void setup(float bW, float bH);
 	void redraw(slice vP, int depth);
@@ -37,7 +38,7 @@ public:
 	ofxPoint getVoxelCoordinates(int _index);
 	bool getVoxelCoordAndVal(int _index, ofxPoint& _coord, int& _val);
 	ofxPoint	getNormalizedCoords(ofxPoint _coord);
-	
+	void colourRandomVoxels(int count);
 	
 	void draw(slice vP);
 //	vector<unsigned char> selectVoxels(vector <ofxPoint> _coord, vector <float> radius);

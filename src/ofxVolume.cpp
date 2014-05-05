@@ -14,6 +14,57 @@ ofxVolume::~ofxVolume()
 }
 */
 
+void ofxVolume::loadColorPow2(string path)
+{
+	ofxImageSequencePlayer imageSequence;
+	imageSequence.init(path + "IM-0001-0", 3, ".tif", 0);
+	
+	int channels =4;
+	
+	// calculate ofxVolume size
+	w	= imageSequence.getWidth();
+    h	= imageSequence.getHeight();
+    d	= imageSequence.getSequenceLength();
+	
+	ofLogNotice("ofxVolume::loadColor") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
+	unsigned char* voxels;
+	voxels = new unsigned char[(int) (w*h*d)*channels];
+	// fill my array with voxels
+    for(int z=0; z<d; z++)
+    {
+        imageSequence.loadFrame(z);
+		int gradient = 0;
+		for(int y=0; y<h; y++)
+        {
+			for(int x=0; x<w; x++)
+			{
+				if (x<w && y<h)
+				{													// get values from image
+					int i = ((x + y*w) + z*w*h)*channels;			// the pointer position at Array
+					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
+					ofColor c;
+					c.set(sample);
+					
+					voxels[i] = c.r;
+					voxels[i+1] = c.g;
+					voxels[i+2] = c.b;
+					voxels[i+3] = sample;
+					//					ofLogVerbose("vizManager") << sample << " ";
+				}
+            }
+        }
+    }//end for
+	
+	ofxVoxels origin;
+	origin.setFromVoxels(voxels, w, h, d, channels);
+	
+	// we will put the original pixels here with an added padding
+	allocate(ofNextPow2(w), ofNextPow2(h),ofNextPow2(d), channels);
+	origin.pasteInto(*this, 0, 0, 0);
+//	temp.pasteInto(*this, w, h, d);
+}
+
+
 void ofxVolume::loadColor(string path)
 {
 	ofxImageSequencePlayer imageSequence;
@@ -39,12 +90,12 @@ void ofxVolume::loadColor(string path)
 			for(int x=0; x<w; x++)
 			{
 				if (x<w && y<h)
-				{																// get values from image
+				{													// get values from image
 					int i = ((x + y*w) + z*w*h)*channels;			// the pointer position at Array
 					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
 					ofColor c;
-					//c.set(sample);
-					c.setHsb(sample, 255-sample, sample);
+					c.set(sample);
+					//c.setHsb(sample, 255-sample, sample);
 					
 					voxels[i] = c.r;
 					voxels[i+1] = c.g;
@@ -113,6 +164,23 @@ void ofxVolume::setup(float bW, float bH)
 	sagittalPixels.set(255);
 	axialPixels.allocate(w, h, OF_IMAGE_GRAYSCALE);
 	axialPixels.set(255);	
+}
+
+//--------------------------------------------------------------
+void ofxVolume::colourRandomVoxels(int count)
+{
+
+	// calculate ofxVolume size
+	w	= getWidth();
+    h	= getHeight();
+    d	= getDepth();
+	
+	for(int i=0; i<count; i++)
+    {
+		ofColor newColor;
+		newColor.set(ofRandom(255), ofRandom(255), ofRandom(255), ofRandom(255));
+		setColor(ofRandom(w), ofRandom(h), ofRandom(d), newColor);
+	}
 }
 
 //--------------------------------------------------------------
