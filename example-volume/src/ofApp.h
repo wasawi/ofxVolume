@@ -20,7 +20,6 @@ public:
 	void initVolumeChar();
 	
 	void initVolume_OLD();
-	void draw_OLD();
     
 	void keyPressed  (int key);
     void keyReleased(int key);

@@ -89,7 +89,7 @@ public:
 	ofPoint  getSize() const;
 
 	int getVoxelCount() const;
-	int getByteSize() const;
+	int getTotalSize() const;
 	int getBytesPerVoxel() const;
 	int getBitsPerVoxel() const;
 	int getBytesPerChannel() const;

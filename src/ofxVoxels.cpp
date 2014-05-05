@@ -62,14 +62,14 @@ void ofxVoxels_<PixelType>::copyFrom(const ofxVoxels_<PixelType> & mom){
 
 template<typename PixelType>
 void ofxVoxels_<PixelType>::setAll(PixelType val){
-	for(int i = 0; i < getByteSize(); i++){
+	for(int i = 0; i < getTotalSize(); i++){
 		voxels[i] = val;
 	}
 }
 
 template<typename PixelType>
 void ofxVoxels_<PixelType>::setAll(int channel,PixelType val){
-	for(int i=channel;i<getByteSize();i+=channels){
+	for(int i=channel;i<getTotalSize();i+=channels){
 		voxels[i] = val;
 	}
 }
@@ -239,8 +239,7 @@ void ofxVoxels_<PixelType>::allocate(int w, int h, int d, ofImageType type){
 template<typename PixelType>
 void ofxVoxels_<PixelType>::swapRgb(){
 	if (channels >= 3){
-		int sizeVoxels = width*height*depth*channels;
-		for (int i=0; i< sizeVoxels; i+=channels){
+		for (int i=0; i< getTotalSize(); i+=channels){
 			std::swap(voxels[i],voxels[i+2]);
 		}
 	}
@@ -309,7 +308,7 @@ void ofxVoxels_<PixelType>::setColor(int x, int y, int z, const ofColor_<PixelTy
 template<typename PixelType>
 void ofxVoxels_<PixelType>::setColor(const ofColor_<PixelType>& color) {
 	int i = 0;
-	while(i < getByteSize()) {
+	while(i < getTotalSize()) {
 		for(int j = 0; j < channels; j++) {
 			voxels[i++] = color[j];
 		}
@@ -364,7 +363,7 @@ int ofxVoxels_<PixelType>::getVoxelCount() const{
 }
 
 template<typename PixelType>
-int ofxVoxels_<PixelType>::getByteSize() const{
+int ofxVoxels_<PixelType>::getTotalSize() const{
 	return getVoxelCount()*channels;
 }
 
@@ -437,7 +436,7 @@ ofxVoxels_<PixelType> ofxVoxels_<PixelType>::getChannel(int channel) const{
 	channelVoxels.allocate(width,height,depth,1);
 	channel = ofClamp(channel,0,channels-1);
 	int j=0;
-	for(int i=channel; i<getByteSize(); i+=channels, ++j){
+	for(int i=channel; i<getTotalSize(); i+=channels, ++j){
 		channelVoxels[j]=voxels[i];
 	}
 	return channelVoxels;
@@ -447,7 +446,7 @@ template<typename PixelType>
 void ofxVoxels_<PixelType>::setChannel(int channel, const ofxVoxels_<PixelType> channelVoxels){
 	channel = ofClamp(channel,0,channels-1);
 	int j=0;
-	for(int i=channel;i<getByteSize();i+=channels, ++j){
+	for(int i=channel;i<getTotalSize();i+=channels, ++j){
 		voxels[i] = channelVoxels[j];
 	}
 
