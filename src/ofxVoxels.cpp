@@ -353,8 +353,8 @@ int ofxVoxels_<PixelType>::getDepth() const{
 	return depth;
 }
 template<typename PixelType>
-ofPoint ofxVoxels_<PixelType>::getSize() const {
-	return ofPoint(width, height, depth);
+ofxIntPoint ofxVoxels_<PixelType>::getSize() const {
+	return ofxIntPoint(width, height, depth);
 }
 
 template<typename PixelType>
@@ -657,7 +657,7 @@ void ofxVoxels_<PixelType>::rotate90To(ofxVoxels_<PixelType> & dst, int nClockwi
 	}
 }
 
-//---------------------------------------------------------------------- OK? to test
+//---------------------------------------------------------------------- OK? to test...
 template<typename PixelType>
 void ofxVoxels_<PixelType>::mirror(bool _width, bool _height, bool _depth){
 
@@ -704,7 +704,7 @@ void ofxVoxels_<PixelType>::mirror(bool _width, bool _height, bool _depth){
 	}
 }
 
-//---------------------------------------------------------------------- OK? to test
+//---------------------------------------------------------------------- OK? to test...
 template<typename PixelType>
 void ofxVoxels_<PixelType>::mirrorTo(ofxVoxels_<PixelType> & dst, bool _width, bool _height, bool _depth){
 	if(&dst == this){
@@ -972,6 +972,53 @@ bool ofxVoxels_<PixelType>::pasteInto(ofxVoxels_<PixelType> &dst, int xTo, int y
 	return true;
 }
 
+// MINE
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+// same as getVoxelIndex but it does not use channel count
+// so don't do this: voxels[getVoxelID(_x, _y, _z) because it wont work for non mono images
+// Attention! ID starts at 0 and ends at voxelCount -1;
+template<typename PixelType>
+int ofxVoxels_<PixelType>::getVoxelID(int _x, int _y, int _z) const {
+	if( !bAllocated ){
+		ofLogError("ofxVoxels") << "getVoxelNumber(): not allocated. \n";
+		return 0;
+	}else if(_x >= width || _y >= height || _z >= depth){
+		ofLogError("ofxVoxels") << "getVoxelNumber(): given coordinates"<<
+		"["<<_x<<","<<_y<<","<<_z<<"]"<<
+		" are out of bounds"<<
+		"["<<width<<","<<height<<","<<depth<<"]"<<
+		". Returning last voxel number.\n";
+		return ( _x + (_y * width ) + (_z * width * height));
+	}else{
+		return ( _x + (_y * width ) + (_z * width * height));
+	}
+}
+//--------------------------------------------------------------
+// oposite as getVoxelID
+template<typename PixelType>
+ofxIntPoint ofxVoxels_<PixelType>::getVoxelCoordinates(int index) const {
+	if( !bAllocated ){
+		
+		ofLogError("ofxVoxels") << "getVoxelCoordinates(): not Allocated. \n";
+		return ofxIntPoint(0);
+	}else if(index >= getVoxelCount()){
+		
+		ofLogError("ofxVoxels") << "getVoxelCoordinates(): Out of bounds! \n Given index=" <<
+		index <<
+		"is highter or equal to voxel count=" <<
+		getVoxelCount()<<
+		". Returning last voxel coord.\n";
+		return ofxIntPoint(width-1,height-1,depth-1);
+	}else{
+
+		int row		= (int)((index / width)%height);
+		int column	= index % width;
+		int page	= (int)((index / width)/height);
+		
+		return ofxIntPoint(row, column, page);
+	}
+}
 
 template class ofxVoxels_<char>;
 template class ofxVoxels_<unsigned char>;

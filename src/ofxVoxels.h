@@ -86,10 +86,8 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 	int getDepth() const;
-	ofPoint  getSize() const;
+	ofxIntPoint  getSize() const;
 
-	int getVoxelCount() const;
-	int getTotalSize() const;
 	int getBytesPerVoxel() const;
 	int getBitsPerVoxel() const;
 	int getBytesPerChannel() const;
@@ -103,6 +101,12 @@ public:
 	void setImageType(ofImageType imageType);
 	void setNumChannels(int numChannels);
 
+	//----Mine
+	int getVoxelID(int x, int y, int z) const;
+	ofxIntPoint getVoxelCoordinates(int index) const;
+	int getVoxelCount() const;
+	int getTotalSize() const;
+	//-
 private:
 //	float bicubicInterpolate(const float *patch, float x,float y, float x2,float y2, float x3,float y3);
 
