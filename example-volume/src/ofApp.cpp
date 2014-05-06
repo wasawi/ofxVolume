@@ -33,7 +33,6 @@ void ofApp::setup()
 	
 	// Init Volume
 	initVolume();
-//	initVolume_OLD();
 
 	// camera
     cam.setDistance(1000);
@@ -45,7 +44,7 @@ void ofApp::initVolume()
 {
 	// Init Volume
 //	volume.loadColor("volumes/Colin27T1_tight/");
-	volume.loadColorPow2("volumes/Colin27T1_tight/");
+	volume.loadColor("volumes/Colin27T1_tight/");
 	//	volume.loadColor("volumes/head/cthead-8bit/");
 	//	volume.load("volumes/talairach_nii/");
 	
@@ -57,54 +56,8 @@ void ofApp::initVolume()
 	bNew = true;
 }
 //--------------------------------------------------------------
-void ofApp::initVolume_OLD()
-{
-	int w, h, d;
-	
-//	imageSequence.init("volumes/head/cthead-8bit",3,".tif", 1);
-	imageSequence.init("volumes/Colin27T1_tight/IM-0001-0",3,".tif", 1);
-    w = imageSequence.getWidth();
-    h = imageSequence.getHeight();
-    d = imageSequence.getSequenceLength();
-	
-    cout << "setting up volume data buffer at " << w << "x" << h << "x" << d <<"\n";
-	
-    volumeData = new unsigned char[w*h*d*4];
-	
-    for(int z=0; z<d; z++)
-    {
-        imageSequence.loadFrame(z);
-        for(int x=0; x<w; x++)
-        {
-            for(int y=0; y<h; y++)
-            {
-                // convert from greyscale to RGBA, false color
-                int i4 = ((x+w*y)+z*w*h)*4;
-                int sample = imageSequence.getPixels()[x+y*w];
-                ofColor c;
-                c.setHsb(sample, 255-sample, sample);
-				
-                volumeData[i4] = c.r;
-                volumeData[i4+1] = c.g;
-                volumeData[i4+2] = c.b;
-                volumeData[i4+3] = sample;
-            }
-        }
-    }
-//	volume.setFromVoxels(volumeData, w, h, d, 4);
-
-	// Init Volume Rendering
-    volumeRender.setup(w, h, d, ofVec3f(1,1,1),true);
-    volumeRender.updateVolumeData(volumeData,w,h,d,0,0,0);
-    volumeRender.setRenderSettings(1.0, 1.0, 0.75, 0.1);
-	volumeRender.setClipDepth(clipPlaneDepth);
-	bNew = false;
-}
-
-//--------------------------------------------------------------
 void ofApp::draw()
 {
-	if (bNew){
 		//ofSetColor(255);
 		cam.begin();
 		volumeRender.update();
@@ -114,11 +67,6 @@ void ofApp::draw()
 		if (blabels){
 			drawLabels();
 		}
-	}else{
-		cam.begin();
-		volumeRender.drawVolume(0,0,0, ofGetHeight(), 0);
-		cam.end();
-	}
 }
 
 //--------------------------------------------------------------
@@ -344,73 +292,13 @@ void ofApp::selectVoxels()
 }
 
 //--------------------------------------------------------------
-void ofApp::initVolumeRendering()
-{
-	// load garbage
-	//	ofVec3f volSize(50);
-	//	volume.allocate(volSize, OF_PIXELS_RGBA);
-	//	volume.setup(boxW, boxH);
-
-	// Init Volume Rendering
-    volumeRender.setup(&volume, ofVec3f(1,1,1), true, GL_RGBA);
-	volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
-	volumeRender.setClipDepth(clipPlaneDepth);
-}
-
-
-//--------------------------------------------------------------
-void ofApp::initVolumeChar()
-{
-	int w, h, d;
-	
-	
-	//	imageSequence.init("volumes/head/cthead-8bit",3,".tif", 1);
-	imageSequence.init("volumes/Colin27T1_tight/IM-0001-0",3,".tif", 1);
-    w = imageSequence.getWidth();
-    h = imageSequence.getHeight();
-    d = imageSequence.getSequenceLength();
-	
-    cout << "setting up volume data buffer at " << w << "x" << h << "x" << d <<"\n";
-	
-    volumeData = new unsigned char[w*h*d*4];
-	
-    for(int z=0; z<d; z++)
-    {
-        imageSequence.loadFrame(z);
-        for(int x=0; x<w; x++)
-        {
-            for(int y=0; y<h; y++)
-            {
-                // convert from greyscale to RGBA, false color
-                int i4 = ((x+w*y)+z*w*h)*4;
-                int sample = imageSequence.getPixels()[x+y*w];
-                ofColor c;
-                c.setHsb(sample, 255-sample, sample);
-				
-                volumeData[i4] = c.r;
-                volumeData[i4+1] = c.g;
-                volumeData[i4+2] = c.b;
-                volumeData[i4+3] = sample;
-            }
-        }
-    }
-	
-	volume.setFromVoxels(volumeData, w, h, d, 4);
-	//    volumeRender.setup(&volume, true, GL_RGBA);
-	
-	/*    volumeRender.setup(w, h, d, ofVec3f(1,1,2),true);
-	 volumeRender.updateVolumeData(volumeData,w,h,d,0,0,0);
-	 volumeRender.setRenderSettings(1.0, 1.0, 0.75, 0.1);
-	 */	volumeRender.setClipDepth(clipPlaneDepth);
-	bNew = false;
-}
-
-//--------------------------------------------------------------
 void ofApp::update()
 {
 	//    ofSetWindowTitle(ofToString(ofGetFrameRate()));
 	//	gifEncoder.update();
 }
+
+//--------------------------------------------------------------
 void ofApp::onGifSaved(string &fileName) {
     cout << "gif saved as " << fileName << endl;
 	gifEncoder.reset();

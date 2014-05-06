@@ -15,12 +15,7 @@ public:
     void draw();
 	void drawLabels();
 	void initVolume();
-	void initVolumeRendering();
-	
-	void initVolumeChar();
-	
-	void initVolume_OLD();
-    
+	   
 	void keyPressed  (int key);
     void keyReleased(int key);
     void mouseMoved(int x, int y );

@@ -61,7 +61,6 @@ void ofxVolume::loadColorPow2(string path)
 	// we will put the original pixels here with an added padding
 	allocate(ofNextPow2(w), ofNextPow2(h),ofNextPow2(d), channels);
 	origin.pasteInto(*this, 0, 0, 0);
-//	temp.pasteInto(*this, w, h, d);
 }
 
 
