@@ -25,22 +25,22 @@ public:
     void windowResized(int w, int h);
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
-
-    void onGifSaved(string & fileName);
-    void exit();
-
-	void selectVoxels();
 	
-    ofEasyCam cam;
+	// others
+	ofEasyCam cam;
     bool blabels;
-    ofxGifEncoder gifEncoder;
+	
+    // GIF
+	ofxGifEncoder gifEncoder;
+	void onGifSaved(string & fileName);
+    void exit();
+	string		date;
 	
 	// Volume Rendering
     ofxVolumetrics volumeRender;
-	
-	// Volume
 	ofxVolume	volume;
-	unsigned char * volumeData;	
+	GLint format;
+	bool bPow2;
 	
 	// Volume rendering UI vars
 	float FBOq, Zq, thresh, density, dithering;
@@ -48,11 +48,14 @@ public:
 	float clipPlaneDepth, azimuth, elevation;
     bool linearFilter;
 
-	float	boxW, boxH;
+	// test functions
+	void selectVoxels();
+	void paintRandomBoxes();
 
-	string		date;
-
-//____________________initVolume_OLD
-    ofxImageSequencePlayer imageSequence;
-	bool bNew;
+    
 };
+
+
+
+
+

@@ -75,12 +75,12 @@
 		08CFC5ED19171BC300BEAEE1 /* ofxVolumetrics.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = ofxVolumetrics.vert; sourceTree = "<group>"; };
 		08CFC5EE19171BC300BEAEE1 /* ofxVolumetricsOriginal.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = ofxVolumetricsOriginal.frag; sourceTree = "<group>"; };
 		08CFC5EF19171BC300BEAEE1 /* ofxVolumetricsOriginal.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = ofxVolumetricsOriginal.vert; sourceTree = "<group>"; };
+		08CFC604191A7F6000BEAEE1 /* ofxPoint.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxPoint.h; sourceTree = "<group>"; };
 		0DE82F34CE3C7E76904AEB80 /* Ray.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = Ray.h; path = ../../../addons/ofxRay/src/ofxRay/Ray.h; sourceTree = SOURCE_ROOT; };
 		13120E09450F7293A154AEE1 /* Projector.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Projector.cpp; path = ../../../addons/ofxRay/src/ofxRay/Projector.cpp; sourceTree = SOURCE_ROOT; };
 		1EE18EFAFFDBA09259EAF8E1 /* ofxVolume.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxVolume.cpp; path = ../../../addons/ofxVolume/src/ofxVolume.cpp; sourceTree = SOURCE_ROOT; };
 		3F53D53B3E0B050EAB28D4FF /* ofxVolumetrics.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxVolumetrics.h; path = ../../../addons/ofxVolumetrics/src/ofxVolumetrics.h; sourceTree = SOURCE_ROOT; };
 		4ACD81C4476FF24E4A29315D /* Ray.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Ray.cpp; path = ../../../addons/ofxRay/src/ofxRay/Ray.cpp; sourceTree = SOURCE_ROOT; };
-		68310D0F5F0D3362AB678106 /* ofxPoint.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxPoint.h; path = ../../../addons/ofxBox/src/ofxPoint.h; sourceTree = SOURCE_ROOT; };
 		6ECBD56AFA3D13E8EA3C4A76 /* ofxVoxels.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxVoxels.cpp; path = ../../../addons/ofxVolume/src/ofxVoxels.cpp; sourceTree = SOURCE_ROOT; };
 		8A33FB6F77F652E8E0672EDA /* Plane.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = Plane.h; path = ../../../addons/ofxRay/src/ofxRay/Plane.h; sourceTree = SOURCE_ROOT; };
 		B34EC3066C2EED6ABD19043E /* ofxVoxels.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxVoxels.h; path = ../../../addons/ofxVolume/src/ofxVoxels.h; sourceTree = SOURCE_ROOT; };
@@ -179,6 +179,23 @@
 			path = ../../ofxVolumetrics/src/shaders;
 			sourceTree = "<group>";
 		};
+		08CFC602191A7F6000BEAEE1 /* ofxPoint */ = {
+			isa = PBXGroup;
+			children = (
+				08CFC603191A7F6000BEAEE1 /* src */,
+			);
+			name = ofxPoint;
+			sourceTree = "<group>";
+		};
+		08CFC603191A7F6000BEAEE1 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				08CFC604191A7F6000BEAEE1 /* ofxPoint.h */,
+			);
+			name = src;
+			path = ../../ofxPoint/src;
+			sourceTree = "<group>";
+		};
 		1CC46975986F85DB381A19B6 /* src */ = {
 			isa = PBXGroup;
 			children = (
@@ -204,7 +221,6 @@
 			isa = PBXGroup;
 			children = (
 				BC8E456F3231E5BA6F31CC7E /* ofxBox.h */,
-				68310D0F5F0D3362AB678106 /* ofxPoint.h */,
 			);
 			name = src;
 			sourceTree = "<group>";
@@ -240,6 +256,7 @@
 		BB4B014C10F69532006C3DED /* addons */ = {
 			isa = PBXGroup;
 			children = (
+				08CFC602191A7F6000BEAEE1 /* ofxPoint */,
 				08CFC5DB191463E700BEAEE1 /* ofxGifEncoder */,
 				3B8B1A8A9EDEB195D158A21F /* ofxVolumetrics */,
 				C882B4798A3582410D94BAC0 /* ofxRay */,

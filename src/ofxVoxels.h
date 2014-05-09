@@ -6,6 +6,7 @@
 #include "ofMath.h"
 #include <limits>
 #include "ofxBox.h"
+#include "ofPixels.h"
 
 /*
  Sometimes when looping throug a volume i use some terminology:
@@ -20,6 +21,16 @@
  (none)		=	_depth
  */
 
+//Slice Cutting Viewpoint
+enum SliceViewPoint
+{
+	FRONT,		//AXIAL		// xy across z	//diadema
+	RIGHT,		//SAGITTAL,	// zy across x	//cresta
+	TOP,		//CORONAL,	// xz across y	//collar
+	BACK,
+	LEFT,
+	BOTTOM
+};
 
 template <typename PixelType>
 class ofxVoxels_ {
@@ -86,14 +97,15 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 	int getDepth() const;
-	ofxIntPoint  getSize() const;
+	ofxPoint  getSize() const;
 
 	int getBytesPerVoxel() const;
 	int getBitsPerVoxel() const;
 	int getBytesPerChannel() const;
 	int getBitsPerChannel() const;
 	int getNumChannels() const;
-
+	GLint getGlFormat() const;
+	
 	ofxVoxels_<PixelType> getChannel(int channel) const;
 	void setChannel(int channel, const ofxVoxels_<PixelType> channelVoxels);
 
@@ -106,7 +118,16 @@ public:
 	ofxIntPoint getVoxelCoordinates(int index) const;
 	int getVoxelCount() const;
 	int getTotalSize() const;
-	//-
+	//-mine
+	
+	//TODO
+	/*
+	ofPixels_<PixelType> getSlice(SliceViewPoint vp, int depth) const;
+	 void setSlice(ofPixels_<PixelType> slice, SliceViewPoint vp, int depth) const;
+	 void setFromPixels(const PixelType * newPixels, int w, int h, int channels);
+	void setFromPixels(const PixelType * newPixels, int w, int h, ofImageType type);
+	 */
+
 private:
 //	float bicubicInterpolate(const float *patch, float x,float y, float x2,float y2, float x3,float y3);
 

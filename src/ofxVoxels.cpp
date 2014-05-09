@@ -261,6 +261,7 @@ void ofxVoxels_<PixelType>::clear(){
 
 template<typename PixelType>
 int ofxVoxels_<PixelType>::getVoxelIndex(int x, int y, int z) const {
+//	cout <<"["<< x<<","<<y<<","<<z<<"]";
 	if( !bAllocated ){
 		return 0;
 	}else{
@@ -353,8 +354,8 @@ int ofxVoxels_<PixelType>::getDepth() const{
 	return depth;
 }
 template<typename PixelType>
-ofxIntPoint ofxVoxels_<PixelType>::getSize() const {
-	return ofxIntPoint(width, height, depth);
+ofxPoint ofxVoxels_<PixelType>::getSize() const {
+	return ofxPoint(width, height, depth);
 }
 
 template<typename PixelType>
@@ -453,7 +454,7 @@ void ofxVoxels_<PixelType>::setChannel(int channel, const ofxVoxels_<PixelType> 
 }
 
 //From ofxVoxelsUtils
-//---------------------------------------------------------------------- OK? to test
+//---------------------------------------------------------------------- OK? to test!
 template<typename PixelType>
 void ofxVoxels_<PixelType>::crop(int x, int y, int z, int w, int h, int d){
 
@@ -461,13 +462,13 @@ void ofxVoxels_<PixelType>::crop(int x, int y, int z, int w, int h, int d){
 
 		w = ofClamp(w,1,getWidth());
 		h = ofClamp(h,1,getHeight());
-		d = ofClamp(h,1,getDepth());
+		d = ofClamp(d,1,getDepth());
 		
 		int bytesPerVoxel = channels;
 
-		int newWidth = w;
-		int newHeight = h;
-		int newDepth = d;
+		int newWidth	= w;
+		int newHeight	= h;
+		int newDepth	= d;
 		
 		// malloc
 		PixelType * newVoxels = new PixelType[newWidth* newHeight* newDepth* bytesPerVoxel];
@@ -704,7 +705,7 @@ void ofxVoxels_<PixelType>::mirror(bool _width, bool _height, bool _depth){
 	}
 }
 
-//---------------------------------------------------------------------- OK? to test...
+//---------------------------------------------------------------------- OK? to test!
 template<typename PixelType>
 void ofxVoxels_<PixelType>::mirrorTo(ofxVoxels_<PixelType> & dst, bool _width, bool _height, bool _depth){
 	if(&dst == this){
@@ -1019,6 +1020,61 @@ ofxIntPoint ofxVoxels_<PixelType>::getVoxelCoordinates(int index) const {
 		return ofxIntPoint(row, column, page);
 	}
 }
+
+//--------------------------------------------------------------
+template<class T>
+int ofxVoxels_<T>::getGlFormat() const{
+	switch(getNumChannels()) {
+		case 4:
+			return GL_RGBA;
+			break;
+		case 3:
+			return GL_RGB;
+			break;
+		case 2:
+			return GL_LUMINANCE_ALPHA;
+			break;
+		case 1:
+			return GL_LUMINANCE;
+			break;
+		default:
+			ofLogError("ofxVoxels")
+			<< "getGlFormat(): internal format not recognized, returning GL_RGBA";
+			return GL_RGBA;
+			break;
+	}
+}
+
+//--------------------------------------------------------------
+/*
+template<typename PixelType>
+ofPixels_<PixelType> ofxVoxels_<PixelType>::getSlice(SliceViewPoint vp, int depth) const{
+	if( !bAllocated )
+	{
+		ofLogError("ofxVoxels") << "getVoxelCoordinates(): not Allocated. \n";
+		return ofPixels_<PixelType>(0);
+	}
+	else if(index >= getVoxelCount())
+	{
+		ofLogError("ofxVoxels") << "getVoxelCoordinates(): Out of bounds! \n Given index=" <<
+		index <<
+		"is highter or equal to voxel count=" <<
+		getVoxelCount()<<
+		". Returning last voxel coord.\n";
+		return ofxIntPoint(width-1,height-1,depth-1);
+	}
+	else
+	{
+		
+		int row		= (int)((index / width)%height);
+		int column	= index % width;
+		int page	= (int)((index / width)/height);
+		
+		return ofxIntPoint(row, column, page);
+	}
+}
+*/
+
 
 template class ofxVoxels_<char>;
 template class ofxVoxels_<unsigned char>;

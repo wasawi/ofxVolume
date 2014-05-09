@@ -8,7 +8,6 @@ void ofApp::setup()
 	ofSetVerticalSync(true);
 	ofSetupScreenOrtho();
 	ofBackground(40);
-	boxW	= boxH = 200;
 	//	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	
 	// GIF
@@ -17,19 +16,19 @@ void ofApp::setup()
 	
 	// shader
 	FBOq		= 1;
-	Zq			= 2;
+	Zq			= 1;
 	thresh		= 0;
-	density		= 10;
+	density		= 1;
 	dithering	= 0;
-	linearFilter= false;
+	linearFilter= true;
 	
 	// slice
 	clipPlaneDepth	= 1;//.50;
-	azimuth			= 1;//0;
+	azimuth			= .4;//0;
 	elevation		= 1;//-.50;
 	
 	//	cam.setFov(1);
-	blabels = false;
+	blabels = true;
 	
 	// Init Volume
 	initVolume();
@@ -43,18 +42,24 @@ void ofApp::setup()
 void ofApp::initVolume()
 {
 	// Init Volume
-//	volume.loadColor("volumes/Colin27T1_tight/");
-	volume.loadColor("volumes/Colin27T1_tight/");
-	//	volume.loadColor("volumes/head/cthead-8bit/");
-	//	volume.load("volumes/talairach_nii/");
+	volume.loadImageSequence("volumes/Colin27T1_tight/");
+//	volume.loadImageSequence("volumes/talairach_nii/");
+
+//	volume.loadAsRGBA("volumes/Colin27T1_tight/");
+//	volume.loadColorPow2("volumes/Colin27T1_tight/");
+
+	bPow2	= volume.isPow2();
+	format	= volume.getGlFormat();
 	
 	// Init Volume Rendering
-    volumeRender.setup(&volume, ofVec3f(1,1,1), true, GL_RGBA);
+    volumeRender.setup(&volume, ofVec3f(1,1,1), bPow2, format);
 	volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
-	volumeRender.setDithering(1);
+	volumeRender.setDithering(dithering);
 	volumeRender.setClipDepth(clipPlaneDepth);
-	bNew = true;
+	volumeRender.setElevation(elevation);
+	volumeRender.setAzimuth(azimuth);
 }
+
 //--------------------------------------------------------------
 void ofApp::draw()
 {
@@ -95,9 +100,10 @@ void ofApp::keyPressed(int key)
 		case 'a':
 //			volume.mirror(false, true, false);
 //			volume.swapRgb();
-			volume.colourRandomVoxels(200);
+//			volume.colourRandomVoxels(200);
+			volume.colourRandomBoxes(2);
 //			volume.setColor(ofColor::grey);
-			volumeRender.setVolume(&volume, true, GL_RGBA);
+			volumeRender.setVolume(&volume, bPow2, format);
 
 //			cout << "size = "<<volume.getTotalSize() << endl;
 //			volume.setImageType(OF_IMAGE_GRAYSCALE);
@@ -278,18 +284,35 @@ void ofApp::drawLabels()
 //--------------------------------------------------------------
 void ofApp::selectVoxels()
 {
-	vector<ofxBox> boxes;
+	vector<ofxIntBox> boxes;
 	
-	ofVec3f position	= ofVec3f(10);
-	ofVec3f size		= ofVec3f(3);
+	ofxIntPoint position	= ofVec3f(ofRandom(100));
+	ofxIntPoint size		= ofVec3f(ofRandom(10));
 	
-	ofxBox box(position, size);
+	ofxIntBox box(position, size);
 	boxes.push_back(box);
-	
-	//	ofRemove(position, false);
 	
 	volume.selectVoxels(boxes);
 }
+//--------------------------------------------------------------
+void ofApp::paintRandomBoxes()
+{
+	ofxIntPoint position	= ofVec3f(ofRandom(100));
+	ofxIntPoint size		= ofVec3f(ofRandom(10), ofRandom(5), ofRandom(5));
+	
+	ofxIntBox box(position, size);
+	vector<ofxPoint> c = volume.getVoxelsinBox(box);
+	cout << "c size= "<< c.size() << endl;
+	for(int i=0; i<c.size(); i++){
+		cout << "i= "<< i << endl;
+		ofxIntPoint p(c[i].x, c[i].y, c[i].z);
+		cout << "ip= "<< p << endl;
+		volume.setColor(p.x,p.y,p.z, ofColor::white);
+	}
+	volumeRender.setVolume(&volume, bPow2, format);
+}
+
+
 
 //--------------------------------------------------------------
 void ofApp::update()

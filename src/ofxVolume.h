@@ -21,8 +21,9 @@ public:
 	ofxVolume();
     virtual ~ofxVolume();
 	*/
+	void loadImageSequence(string path, bool forcePow2=false);
 	
-	void loadColor(string path="");
+	void loadAsRGBA(string path="");
 	void loadColorPow2(string path="");
 	void loadMono(string path="");
 	void setup(float bW, float bH);
@@ -30,24 +31,25 @@ public:
 	void destroy();
 	
 	// Getters
-//	ofxPoint getSize();
-//	ofxPoint getPos();
+	ofColor getCursorColor();
+	ofxIntPoint getCursorCoords(int _index);
+	int getCursorID();
+
+	vector <ofxPoint> getVoxelsinBox(ofxIntBox& box);
 	
 	int getVoxelValue();
 	int getVoxelNumber();
-	ofxPoint getVoxelCoordinates(int _index);
-	bool getVoxelCoordAndVal(int _index, ofxPoint& _coord, int& _val);
-	ofxPoint	getNormalizedCoords(ofxPoint _coord);
+	bool getVoxelCoordAndVal(int _index, ofxIntPoint& _coord, int& _val);
+
 	void colourRandomVoxels(int count);
+	void colourRandomBoxes(int count);
 	
 	void draw(slice vP);
 //	vector<unsigned char> selectVoxels(vector <ofxPoint> _coord, vector <float> radius);
-	void clearSelected();
 	
-	void selectVoxels(vector <ofxBox>& boxes);
+	// selection
+	void selectVoxels(vector <ofxIntBox>& boxes);
 	void selectVoxels(ofxBox& box);
-	vector <ofxPoint> getVoxelsinBox(ofxBox& box);
-//	void getVoxelsinBox(ofxPoint& _coord, ofxPoint& _size);
 		
 protected:
 private:
@@ -56,7 +58,8 @@ private:
 	void redrawAxial();
 	void redrawCoronal();
 
-	ofxBox outerBox; //the box outside the volume useful if volume is non symetrical and you nedd a symetrical box to handle gui or others..
+	ofxBox outerBox;
+	//the box outside the volume useful if volume is non symetrical and you nedd a symetrical box to handle gui or others..
 	
 	vector <ofxPoint> getVoxelsinRadius(ofxPoint& _coord, float& _radius);
 	bool inside(ofxPoint _coord);
