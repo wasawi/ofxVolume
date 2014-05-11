@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		028A1A54F7661FB669A7DFF8 /* Ray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4ACD81C4476FF24E4A29315D /* Ray.cpp */; };
+		08AEA91D191D857000A87F45 /* ofxVolumeT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08AEA91B191D857000A87F45 /* ofxVolumeT.cpp */; };
 		08CFC5DF191463E700BEAEE1 /* ofxGifEncoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08CFC5DD191463E700BEAEE1 /* ofxGifEncoder.cpp */; };
 		202B3D901E332A2CAF54256D /* ofxTexture3d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE68D117096A7022E761A462 /* ofxTexture3d.cpp */; };
 		7A5DDC993979FB5561F47EFE /* ofxVolumetrics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F3B23A025216F41A92D52B26 /* ofxVolumetrics.cpp */; };
@@ -69,6 +70,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		08AEA91B191D857000A87F45 /* ofxVolumeT.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofxVolumeT.cpp; path = ../src/ofxVolumeT.cpp; sourceTree = "<group>"; };
+		08AEA91C191D857000A87F45 /* ofxVolumeT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofxVolumeT.h; path = ../src/ofxVolumeT.h; sourceTree = "<group>"; };
+		08AEA93219202F8B00A87F45 /* ofxImageSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofxImageSequence.h; path = ../src/ofxImageSequence.h; sourceTree = "<group>"; };
 		08CFC5DD191463E700BEAEE1 /* ofxGifEncoder.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxGifEncoder.cpp; sourceTree = "<group>"; };
 		08CFC5DE191463E700BEAEE1 /* ofxGifEncoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxGifEncoder.h; sourceTree = "<group>"; };
 		08CFC5EC19171BC300BEAEE1 /* ofxVolumetrics.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = ofxVolumetrics.frag; sourceTree = "<group>"; };
@@ -228,6 +232,9 @@
 		8F86E406E10460BE754B3935 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				08AEA93219202F8B00A87F45 /* ofxImageSequence.h */,
+				08AEA91B191D857000A87F45 /* ofxVolumeT.cpp */,
+				08AEA91C191D857000A87F45 /* ofxVolumeT.h */,
 				1EE18EFAFFDBA09259EAF8E1 /* ofxVolume.cpp */,
 				DA61852516CBB54DB5370F84 /* ofxVolume.h */,
 				6ECBD56AFA3D13E8EA3C4A76 /* ofxVoxels.cpp */,
@@ -474,6 +481,7 @@
 				9ABE161F13B1E8B87B7C04F9 /* Plane.cpp in Sources */,
 				DE51E964916E52B1AB50BB5F /* Projector.cpp in Sources */,
 				028A1A54F7661FB669A7DFF8 /* Ray.cpp in Sources */,
+				08AEA91D191D857000A87F45 /* ofxVolumeT.cpp in Sources */,
 				8165E0DDBD7DD4CDDC980600 /* ofxVolume.cpp in Sources */,
 				EE685084B0778026B976FB06 /* ofxVoxels.cpp in Sources */,
 			);

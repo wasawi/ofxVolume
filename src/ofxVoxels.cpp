@@ -40,6 +40,7 @@ ofxVoxels_<PixelType>::ofxVoxels_(const ofxVoxels_<PixelType> & mom){
 	width = 0;
 	height = 0;
 	depth = 0;
+	offset = ofVec3f(0);
 	copyFrom( mom );
 }
 
@@ -106,6 +107,7 @@ void ofxVoxels_<PixelType>::setFromExternalVoxels(PixelType * newVoxels, int w, 
 	width	= w;
 	height	= h;
 	depth	= d;
+	offset	= ofVec3f(0); // todo!
 	
 	voxels = newVoxels;
 	voxelsOwner = false;
@@ -140,6 +142,7 @@ void ofxVoxels_<PixelType>::swap(ofxVoxels_<PixelType> & pix){
 	std::swap(height,pix.height);
 	std::swap(depth,pix.depth);
 	std::swap(channels,pix.channels);
+	std::swap(offset,pix.offset);
 	std::swap(voxelsOwner, pix.voxelsOwner);
 	std::swap(bAllocated, pix.bAllocated);
 }
@@ -185,6 +188,7 @@ void ofxVoxels_<PixelType>::allocate(int w, int h, int d, int _channels){
 	width= w;
 	height = h;
 	depth = d;
+	offset = ofVec3f(0); // todo!
 	
 	voxels = new PixelType[w * h * d * channels];
 	bAllocated = true;
@@ -256,6 +260,7 @@ void ofxVoxels_<PixelType>::clear(){
 	height			= 0;
 	depth			= 0;
 	channels		= 0;
+	offset			= ofVec3f(0); // todo!
 	bAllocated		= false;
 }
 
@@ -356,6 +361,10 @@ int ofxVoxels_<PixelType>::getDepth() const{
 template<typename PixelType>
 ofxPoint ofxVoxels_<PixelType>::getSize() const {
 	return ofxPoint(width, height, depth);
+}
+template<typename PixelType>
+ofxPoint ofxVoxels_<PixelType>::getOffset() const {
+	return ofxPoint(offset.x, offset.y, offset.z);
 }
 
 template<typename PixelType>

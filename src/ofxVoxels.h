@@ -98,7 +98,8 @@ public:
 	int getHeight() const;
 	int getDepth() const;
 	ofxPoint  getSize() const;
-
+	ofxPoint  getOffset() const;
+	
 	int getBytesPerVoxel() const;
 	int getBitsPerVoxel() const;
 	int getBytesPerChannel() const;
@@ -141,21 +142,22 @@ private:
 	int 	width;
 	int 	height;
 	int 	depth;
-	
 	int 	channels; // 1, 3, 4 channels per pixel (grayscale, rgb, rgba)
+	ofVec3f offset;
+	
 	bool	bAllocated;
 	bool	voxelsOwner;			// if set from external data don't delete it
 };
 
 
 typedef ofxVoxels_<unsigned char> ofxVoxels;
-typedef ofxVoxels_<float> ofFloatVoxels;
-typedef ofxVoxels_<unsigned short> ofShortVoxels;
+typedef ofxVoxels_<float> ofxFloatVoxels;
+typedef ofxVoxels_<unsigned short> ofxShortVoxels;
 
 
 typedef ofxVoxels& ofxVoxelsRef;
-typedef ofFloatVoxels& ofFloatVoxelsRef;
-typedef ofShortVoxels& ofShortVoxelsRef;
+typedef ofxFloatVoxels& ofxFloatVoxelsRef;
+typedef ofxShortVoxels& ofxShortVoxelsRef;
 
 // sorry for these ones, being templated functions inside a template i needed to do it in the .h
 // they allow to do things like:
@@ -187,7 +189,7 @@ template<typename PixelType>
 template<typename SrcType>
 void ofxVoxels_<PixelType>::copyFrom(const ofxVoxels_<SrcType> & mom){
 	if(mom.isAllocated()){
-		allocate(mom.getWidth(),mom.getHeight(),mom.getNumChannels());
+		allocate(mom.getWidth(),mom.getHeight(),mom.getDepth(),mom.getNumChannels());
 
 		const float srcMax = ( (sizeof(SrcType) == sizeof(float) ) ? 1.f : numeric_limits<SrcType>::max() );
 		const float dstMax = ( (sizeof(PixelType) == sizeof(float) ) ? 1.f : numeric_limits<PixelType>::max() );
@@ -195,12 +197,12 @@ void ofxVoxels_<PixelType>::copyFrom(const ofxVoxels_<SrcType> & mom){
 
 		if(sizeof(SrcType) == sizeof(float)) {
 			// coming from float we need a special case to clamp the values
-			for(int i = 0; i < mom.size(); i++){
+			for(int i = 0; i < mom.getTotalSize(); i++){
 				voxels[i] = CLAMP(mom[i], 0, 1) * factor;
 			}
 		} else{
 			// everything else is a straight scaling
-			for(int i = 0; i < mom.size(); i++){
+			for(int i = 0; i < mom.getTotalSize(); i++){
 				voxels[i] = mom[i] * factor;
 			}
 		}
