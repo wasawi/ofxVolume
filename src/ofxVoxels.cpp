@@ -16,7 +16,9 @@ static ofImageType getImageTypeFromChannels(int channels){
 }
 
 template<typename PixelType>
-ofxVoxels_<PixelType>::ofxVoxels_(){
+ofxVoxels_<PixelType>::ofxVoxels_()
+:width(size.x), height(size.y), depth(size.z){
+	
 	bAllocated = false;
 	voxelsOwner = false;
 	channels = 0;
@@ -31,7 +33,8 @@ ofxVoxels_<PixelType>::~ofxVoxels_(){
 }
 
 template<typename PixelType>
-ofxVoxels_<PixelType>::ofxVoxels_(const ofxVoxels_<PixelType> & mom){
+ofxVoxels_<PixelType>::ofxVoxels_(const ofxVoxels_<PixelType> & mom)
+:width(size.x), height(size.y), depth(size.z){
 	
 	bAllocated = false;
 	voxelsOwner = false;
@@ -564,8 +567,8 @@ void ofxVoxels_<PixelType>::cropTo(ofxVoxels_<PixelType> &toPix, int x, int y, i
 	}
 }
 
-//---------------------------------------------------------------------- TODO
-/* 3rd axis not written. this means that I've just adapted the code to run through the volume,
+//----------------------------------------------------------------------
+/* TODO: 3rd axis not written. this means that I've just adapted the code to run through the volume,
  but you can rotate ONLY in one axis.
  */
 template<typename PixelType>
@@ -602,8 +605,8 @@ void ofxVoxels_<PixelType>::rotate90(int nClockwiseRotations){
 
 }
 
-//---------------------------------------------------------------------- TODO
-/* 3rd axis not written. this means that I've just adapted the code to run through the volume,
+//----------------------------------------------------------------------
+/* TODO: 3rd axis not written. this means that I've just adapted the code to run through the volume,
  but you can rotate ONLY in one axis.
  */
 template<typename PixelType>
@@ -950,7 +953,7 @@ template<typename PixelType>
 bool ofxVoxels_<PixelType>::pasteInto(ofxVoxels_<PixelType> &dst, int xTo, int yTo, int zTo){
 	if (!(isAllocated()) || !(dst.isAllocated()) ||										// check if voxels are not allocated,
 		getBytesPerVoxel() != dst.getBytesPerVoxel() ||									// if bytes are different
-		xTo>=dst.getWidth() || yTo>=dst.getHeight() || zTo>=dst.getDepth()) return false;// and if dest position is within bounds
+		xTo>=dst.getWidth() || yTo>=dst.getHeight() || zTo>=dst.getDepth()) return false;// and if dst position is within bounds
 
 	// the size of each row. this is the amount of bytes we will copy per row.
 	int bytesToCopyPerRow	= (xTo + getWidth() <=dst.getWidth() ? getWidth() : dst.getWidth() -xTo) * getBytesPerVoxel();
@@ -959,7 +962,7 @@ bool ofxVoxels_<PixelType>::pasteInto(ofxVoxels_<PixelType> &dst, int xTo, int y
 	// pagesToCopy is the amount of pages to copy
 	int pagesToCopy			= zTo + getDepth() <= dst.getDepth() ? getDepth() :	dst.getDepth() -zTo;
 	
-	// put dest at the correct initial position if xTo/yTo/zTo is not zero.
+	// put dst at the correct initial position if xTo/yTo/zTo is not zero.
 	PixelType * dstVox = dst.getVoxels() + ((xTo + (yTo*dst.getWidth()) + (zTo*dst.getWidth()*dst.getHeight()) )*dst.getBytesPerVoxel());
 	// src is at initial position. no need to move.
 	PixelType * srcVox = getVoxels();
@@ -991,10 +994,10 @@ bool ofxVoxels_<PixelType>::pasteInto(ofxVoxels_<PixelType> &dst, int xTo, int y
 template<typename PixelType>
 int ofxVoxels_<PixelType>::getVoxelID(int _x, int _y, int _z) const {
 	if( !bAllocated ){
-		ofLogError("ofxVoxels") << "getVoxelNumber(): not allocated. \n";
+		ofLogError("ofxVoxels") << "getVoxelID(): not allocated. \n";
 		return 0;
 	}else if(_x >= width || _y >= height || _z >= depth){
-		ofLogError("ofxVoxels") << "getVoxelNumber(): given coordinates"<<
+		ofLogError("ofxVoxels") << "getVoxelID(): given coordinates"<<
 		"["<<_x<<","<<_y<<","<<_z<<"]"<<
 		" are out of bounds"<<
 		"["<<width<<","<<height<<","<<depth<<"]"<<
@@ -1055,34 +1058,419 @@ int ofxVoxels_<T>::getGlFormat() const{
 }
 
 //--------------------------------------------------------------
-/*
 template<typename PixelType>
-ofPixels_<PixelType> ofxVoxels_<PixelType>::getSlice(SliceViewPoint vp, int depth) const{
+ofxIntPoint ofxVoxels_<PixelType>::getSizeFromVP(SliceViewPoint vp)const{
+	switch (vp) {
+		case FRONT:
+			return ofxIntPoint(width,height,depth);
+		case RIGHT:
+			return ofxIntPoint(depth,height,width);
+		case TOP:
+			return ofxIntPoint(width,depth,height);
+		case BACK:
+			return ofxIntPoint(height,width,depth);
+		case LEFT:
+			return ofxIntPoint(height,depth,width);
+		case BOTTOM:
+			return ofxIntPoint(depth,width,height);
+	}
+}
+
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+ofPixels_<PixelType> ofxVoxels_<PixelType>::getSlice(SliceViewPoint vp, int offset){
+	ofPixels_<PixelType> slice;
+	slice.allocate(getSizeFromVP(vp).x, getSizeFromVP(vp).y ,getImageType());
+	
+	int nslices	= getSizeFromVP(vp).z;
+	
 	if( !bAllocated )
 	{
-		ofLogError("ofxVoxels") << "getVoxelCoordinates(): not Allocated. \n";
-		return ofPixels_<PixelType>(0);
+		ofLogError("ofxVoxels") << "getSlice(): not Allocated. Returning empty slice.\n";
+		return slice;
 	}
-	else if(index >= getVoxelCount())
+	else if (offset >= nslices)
 	{
-		ofLogError("ofxVoxels") << "getVoxelCoordinates(): Out of bounds! \n Given index=" <<
-		index <<
-		"is highter or equal to voxel count=" <<
-		getVoxelCount()<<
-		". Returning last voxel coord.\n";
-		return ofxIntPoint(width-1,height-1,depth-1);
+		ofLogError("ofxVoxels") << "getSlice(): Out of bounds! \n Given index=" <<
+		offset <<
+		"is highter or equal to volume slice count" <<
+		nslices<<
+		". Returning empty slice.\n";
+		return slice;
+	}else{
+	
+		copySliceTo( slice, vp, offset );
+		
+	}
+}
+
+//-------------------------------------------------------------- OK? to test
+/*
+ This method assumes that the width,height of the image is correct
+ */
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copySliceTo(ofPixels_<PixelType>& dst, SliceViewPoint vp, int offset ){
+
+	int nslices	= getSizeFromVP(vp).z;
+
+	if( !bAllocated || !dst.isAllocated())
+	{
+		ofLogError("ofxVoxels") << "copySliceTo(): not Allocated. Returning empty slice.\n";
+		return false;
+	}
+	else if(dst.getWidth() != getSizeFromVP(vp).x || dst.getHeight() != getSizeFromVP(vp).y)
+	{
+		ofLogError("ofxVoxels") << "copySliceTo(): Image Size missmatch.\n";
+		return false;
+	}
+	else if ( offset >= nslices )
+	{
+		ofLogError("ofxVoxels") << "copySliceTo(): Out of bounds! \n Given index=" <<
+		offset <<
+		"is highter or equal to volume slice count" <<
+		nslices<<
+		". Returning empty slice.\n";
+		return false;
 	}
 	else
 	{
-		
-		int row		= (int)((index / width)%height);
-		int column	= index % width;
-		int page	= (int)((index / width)/height);
-		
-		return ofxIntPoint(row, column, page);
+		// i hope that using this functions will be faster than using cropTo
+		switch (vp) {
+			case FRONT:
+				return copyFrontSliceTo(dst, offset);
+			case RIGHT:
+				return copyRightSliceTo(dst, offset);
+			case TOP:
+				return copyTopSliceTo(dst, offset);
+			case BACK:
+				return copyBackSliceTo(dst, offset);
+			case LEFT:
+				return copyLeftSliceTo(dst, offset);
+			case BOTTOM:
+				return copyBottomSliceTo(dst, offset);
+		}
+		return true;
 	}
 }
-*/
+
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyFrontSliceTo(ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+/*	this saves few iterations:
+	instead of looping through all voxels we loop only through the ones we need
+	following functions use the same technique
+ */
+	
+//	for(int z=0; z<depth; z++)
+//    {
+//		if (z==offset)
+//		{
+			for(int y=0; y<height; y++)
+			{
+				for(int x=0; x<width; x++)
+				{
+//					int voxl = (x + (y*width) + z*area);
+//					int pixl = (x+ (y*width));
+
+					// cursor position at Volume
+					int voxl = (x + (y*width) + offset*area);
+					// cursor position at Image
+					int pixl = (x+ (y*width));
+					
+					copyPixelTo(dst, pixl, voxl);
+				}
+			}
+//		}
+//    }
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyRightSliceTo(ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	for(int z=0; z<depth; z++)
+	{
+		for(int y=0; y<height; y++)
+		{
+			// cursor position at Volume
+			int voxl = (offset + (y*width) + z*area);
+			// cursor position at Image
+			int pixl = (z+ (y*width));
+			
+			copyPixelTo(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyTopSliceTo(ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	for(int z=0; z<depth; z++)
+	{
+		for(int x=0; x<width; x++)
+		{
+			// cursor position at Volume
+			int voxl = (x + (offset*width) + ((depth-1)-z)*area);
+			// cursor position at Image
+			int pixl = (x+ (z*width));
+			
+			copyPixelTo(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyBackSliceTo(ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	offset = (depth-1) - offset;
+	for(int y=0; y<height; y++)
+	{
+		for(int x=0; x<width; x++)
+		{
+			// cursor position at Volume
+			int voxl = (((width-1)-x) + (y*width) + offset*area);
+			// cursor position at Image
+			int pixl = (x+ (y*width));
+			
+			copyPixelTo(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyLeftSliceTo(ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	offset = (width-1) - offset;
+	for(int y=0; y<height; y++)
+	{
+		for(int z=0; z<depth; z++)
+		{
+			// cursor position at Volume
+			int voxl = (offset + (y*width) + ((depth-1)-z)*area);
+			// cursor position at Image
+			int pixl = (z+ (y*width));
+			
+			copyPixelTo(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyBottomSliceTo(ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	offset = (height-1) - offset;
+	for(int z=0; z<depth; z++)
+	{
+		for(int x=0; x<width; x++)
+		{
+			// cursor position at Volume
+			int voxl = (x + (offset*width) + z*area);
+			// cursor position at Image
+			int pixl = (x+ (z*width));
+			
+			copyPixelTo(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+inline void ofxVoxels_<PixelType>::copyPixelTo(ofPixels_<PixelType>& dst, int dstPix, int srcVox ){
+	
+	for (int l = 0; l < channels; l++){
+		dst[dstPix* channels + l] = voxels[srcVox* channels + l];
+	}
+}
+
+
+//-------------------------------------------------------------- OK? to test
+/*
+ This method assumes that the width,height of the image is correct
+ */
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copySliceFrom(const ofPixels_<PixelType>& dst, SliceViewPoint vp, int offset ){
+	
+	int nslices	= getSizeFromVP(vp).z;
+	
+	if( !bAllocated || !dst.isAllocated())
+	{
+		ofLogError("ofxVoxels") << "copySliceFrom(): not Allocated. Returning empty slice.\n";
+		return false;
+	}
+	else if(dst.getWidth() != getSizeFromVP(vp).x || dst.getHeight() != getSizeFromVP(vp).y)
+	{
+		ofLogError("ofxVoxels") << "copySliceFrom(): Image Size missmatch.\n";
+		return false;
+	}
+	else if ( offset >= nslices )
+	{
+		ofLogError("ofxVoxels") << "copySliceFrom(): Out of bounds! \n Given index=" <<
+		offset <<
+		"is highter or equal to volume slice count" <<
+		nslices<<
+		". Returning empty slice.\n";
+		return false;
+	}
+	else
+	{
+		// i hope that using this functions will be faster than using cropTo
+		switch (vp) {
+			case FRONT:
+				return copyFrontSliceFrom(dst, offset);
+			case RIGHT:
+				return copyRightSliceFrom(dst, offset);
+			case TOP:
+				return copyTopSliceFrom(dst, offset);
+			case BACK:
+				return copyBackSliceFrom(dst, offset);
+			case LEFT:
+				return copyLeftSliceFrom(dst, offset);
+			case BOTTOM:
+				return copyBottomSliceFrom(dst, offset);
+		}
+		return true;
+	}
+}
+
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyFrontSliceFrom(const ofPixels_<PixelType>& dst, int offset ){
+	
+	// this saves few iterations:
+	// following functions use the same technique
+	
+	//	for(int z=0; z<depth; z++)
+	//    {
+	//		if (z==offset)
+	//		{
+	int area= width*height;
+	for(int y=0; y<height; y++)
+	{
+		for(int x=0; x<width; x++)
+		{
+			//					int voxl = (x + (y*width) + z*width*height) * channels;
+			//					int pixl = (x+ (y*width)) * channels;
+			
+			// cursor position at Volume
+			int voxl = (x + (y*width) + offset*area);
+			// cursor position at Image
+			int pixl = (x+ (y*width));
+			
+			copyPixelFrom(dst, pixl, voxl);
+		}
+	}
+	//		}
+	//    }
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyRightSliceFrom(const ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	for(int z=0; z<depth; z++)
+	{
+		for(int y=0; y<height; y++)
+		{
+			// cursor position at Volume
+			int voxl = (offset + (y*width) + z*area);
+			// cursor position at Image
+			int pixl = (z+ (y*width));
+			
+			copyPixelFrom(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyTopSliceFrom(const ofPixels_<PixelType>& dst, int offset ){
+	
+	int area= width*height;
+	for(int z=0; z<depth; z++)
+	{
+		for(int x=0; x<width; x++)
+		{
+			// cursor position at Volume
+			int voxl = (x + (offset*width) + ((depth-1)-z)*area);
+			// cursor position at Image
+			int pixl = (x+ (z*width));
+			
+			copyPixelFrom(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyBackSliceFrom(const ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	offset = (depth-1) - offset;
+	for(int y=0; y<height; y++)
+	{
+		for(int x=0; x<width; x++)
+		{
+			// cursor position at Volume
+			int voxl = (((width-1)-x) + (y*width) + offset*area);
+			// cursor position at Image
+			int pixl = (x+ (y*width));
+			
+			copyPixelFrom(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyLeftSliceFrom(const ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	offset = (width-1) - offset;
+	for(int y=0; y<height; y++)
+	{
+		for(int z=0; z<depth; z++)
+		{
+			// cursor position at Volume
+			int voxl = (offset + (y*width) + ((depth-1)-z)*area);
+			// cursor position at Image
+			int pixl = (z+ (y*width));
+			
+			copyPixelFrom(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+bool ofxVoxels_<PixelType>::copyBottomSliceFrom(const ofPixels_<PixelType>& dst, int offset ){
+
+	int area= width*height;
+	offset = (height-1) - offset;
+	for(int z=0; z<depth; z++)
+	{
+		for(int x=0; x<width; x++)
+		{
+			// cursor position at Volume
+			int voxl = (x + (offset*width) + z*area);
+			// cursor position at Image
+			int pixl = (x+ (z*width));
+			
+			copyPixelFrom(dst, pixl, voxl);
+		}
+	}
+}
+//-------------------------------------------------------------- OK? to test
+template<typename PixelType>
+inline void ofxVoxels_<PixelType>::copyPixelFrom(const ofPixels_<PixelType>& src, int srcPix, int dstVox ){
+	
+	for (int l = 0; l < channels; l++){
+		voxels[dstVox* channels + l] = src[srcPix* channels + l];
+	}
+}
+
+
+
 
 
 template class ofxVoxels_<char>;

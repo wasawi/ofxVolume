@@ -6,136 +6,136 @@
 #include "FreeImage.h"
 
 #include "ofxVolumeT.h"
-#include "ofxVoxels.h"
+
+#if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
+#include <set>
+// android destroys the opengl context on screen orientation change
+// or when the application runs in the background so we need to reload
+// all the textures when the context is created again.
+// keeping a pointer to all the images we can tell them to reload from a static method
+static set<ofImage *> & all_images(){
+	static set<ofImage *> * images = new set<ofImage *>;
+	return *images;
+}
+static set<ofFloatImage *> & all_float_images(){
+	static set<ofFloatImage *> * images = new set<ofFloatImage *>;
+	return *images;
+}
+
+static set<ofShortImage *> & all_short_images(){
+	static set<ofShortImage *> * images = new set<ofShortImage *>;
+	return *images;
+}
+
+static void registerImage(ofImage * img){
+	all_images().insert(img);
+}
+
+static void registerImage(ofFloatImage * img){
+	all_float_images().insert(img);
+}
+
+static void registerImage(ofShortImage * img){
+	all_short_images().insert(img);
+}
+
+static void unregisterImage(ofImage * img){
+	all_images().erase(img);
+}
+
+static void unregisterImage(ofFloatImage * img){
+	all_float_images().erase(img);
+}
+
+static void unregisterImage(ofShortImage * img){
+	all_short_images().erase(img);
+}
+
+void ofReloadAllImageTextures(){
+	set<ofImage *>::iterator it;
+	for(it=all_images().begin(); it!=all_images().end(); it++){
+		(*it)->reloadTexture();
+	}
+	set<ofFloatImage *>::iterator f_it;
+	for(f_it=all_float_images().begin(); f_it!=all_float_images().end(); f_it++){
+		(*f_it)->reloadTexture();
+	}
+}
+#endif
+
 
 template<typename PixelType>
-static bool loadImage(ofxVoxels_<PixelType> & voxls, string folder){
-/*
-	ofInitFreeImage();
-	if(fileName.substr(0, 7) == "http://") {
-		return ofLoadImage(voxls, ofLoadURL(fileName).data);
-	}
+static bool loadVolume(ofxVoxels_<PixelType> & voxls, string folder, bool forcePow2=false){
+	/*
+	 TODO:
+	 Loading from url not implemented.
+	 */
+
+	ofxImageSequence imageSequence;
+	if (!imageSequence.setup(folder)) return false;
 	
-	fileName = ofToDataPath(fileName);
-	bool bLoaded = false;
-	FIBITMAP * bmp = NULL;
+	// get image attributes
+	int w	= imageSequence.getWidth();
+    int h	= imageSequence.getHeight();
+    int d	= imageSequence.getSequenceLength();
+	int channels		= imageSequence.getPixelsRef().getNumChannels();
+	int bytesPerChannel = imageSequence.getPixelsRef().getBytesPerChannel();
 	
-	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-	fif = FreeImage_GetFileType(fileName.c_str(), 0);
-	if(fif == FIF_UNKNOWN) {
-		// or guess via filename
-		fif = FreeImage_GetFIFFromFilename(fileName.c_str());
-	}
-	if((fif != FIF_UNKNOWN) && FreeImage_FIFSupportsReading(fif)) {
-		bmp = FreeImage_Load(fif, fileName.c_str(), 0);
+	ofLogNotice("ofxVolume::loadVolume") << "Loading volume "
+	<< w << "x" << h << "x" << d
+	<< " channels= "<<channels
+	<< " bytesPerChannel= "<<bytesPerChannel;
 		
-		if (bmp != NULL){
-			bLoaded = true;
+	if (forcePow2){
+		// override dimensions to pow2
+		// this will creat an added padding to the volume
+		w = ofNextPow2(w);
+		h = ofNextPow2(h);
+		d = ofNextPow2(d);
+		ofLogNotice("ofxVolume::loadVolume") << "forcing pow2 size "
+		<< ofNextPow2(w) << "x" << ofNextPow2(h)<< "x" << ofNextPow2(d) << " channels= "<<channels;
+	}
+
+	voxls.allocate(w, h, d, channels);
+	
+	// copy images to volume
+	for(int z=0; z<d; z++)
+	{
+		imageSequence.loadFrame(z);
+
+//		this would be nicer but imageSequence is not templated
+//		voxls.copyFrontSliceFrom(imageSequence.getPixels(), z);
+
+		for(int y=0; y<h; y++)
+		{
+			for(int x=0; x<w; x++)
+			{
+				// get values from image
+				int dstVox = (x + (y*w) + z*w*h);	// cursor position at Volume
+				int srcPix = (x+ (y*w));			// cursor position at Image
+				
+				for (int l = 0; l < channels; l++){
+					voxls[dstVox* channels + l] = imageSequence.getPixels()[srcPix* channels + l];
+				}
+			}
 		}
-	}
+	}//end for
 	
-	//-----------------------------
-	
-	if ( bLoaded ){
-		putBmpIntoPixels(bmp,voxls);
-	}
-	
-	if (bmp != NULL){
-		FreeImage_Unload(bmp);
-	}
-	return bLoaded;
- */
-	
-	
-	
-	
-	
+	ofLogNotice("ofxVolume::loadVolume") << "Volume loaded.";
+	return true;
 }
-
-template<typename PixelType>
-static bool loadImage(ofxVoxels_<PixelType> & voxls, const ofBuffer & buffer){
-/*
-	ofInitFreeImage();
-	bool bLoaded = false;
-	FIBITMAP* bmp = NULL;
-	FIMEMORY* hmem = NULL;
-	
-	hmem = FreeImage_OpenMemory((unsigned char*) buffer.getBinaryBuffer(), buffer.size());
-	if (hmem == NULL){
-		ofLogError("ofImage") << "loadImage(): couldn't load image from ofBuffer, opening FreeImage memory failed";
-		return false;
-	}
-
-	//get the file type!
-	FREE_IMAGE_FORMAT fif = FreeImage_GetFileTypeFromMemory(hmem);
-	if( fif == -1 ){
-		ofLogError("ofImage") << "loadImage(): couldn't load image from ofBuffer, unable to guess image format from memory";
-		return false;
-		FreeImage_CloseMemory(hmem);
-	}
-
-
-	//make the image!!
-	bmp = FreeImage_LoadFromMemory(fif, hmem, 0);
-	
-	if( bmp != NULL ){
-		bLoaded = true;
-	}
-	
-	//-----------------------------
-	
-	if (bLoaded){
-		putBmpIntoPixels(bmp,voxls);
-	}
-
-	if (bmp != NULL){
-		FreeImage_Unload(bmp);
-	}
-	
-	if( hmem != NULL ){
-		FreeImage_CloseMemory(hmem);
-	}
-
-	return bLoaded;
- */
-}
-
-
 //----------------------------------------------------
-bool ofLoadVolume(ofxVoxels & voxls, string fileName) {
-	return loadImage(voxls,fileName);
+bool ofLoadVolume(ofxVoxels & voxls, string folder) {
+	return loadVolume(voxls,folder);
 }
-
 //----------------------------------------------------
-bool ofLoadVolume(ofxVoxels & voxls, const ofBuffer & buffer) {
-	return loadImage(voxls,buffer);
+bool ofLoadVolume(ofxFloatVoxels & voxls, string folder){
+	return loadVolume(voxls,folder);
 }
-
-//----------------------------------------------------
-bool ofLoadVolume(ofxFloatVoxels & voxls, string path){
-	return loadImage(voxls,path);
-}
-
-//----------------------------------------------------
-bool ofLoadVolume(ofxFloatVoxels & voxls, const ofBuffer & buffer){
-	return loadImage(voxls,buffer);
-}
-
-//----------------------------------------------------
-bool ofLoadVolume(ofxShortVoxels & voxls, string path){
-	return loadImage(voxls,path);
-}
-
-//----------------------------------------------------
-bool ofLoadVolume(ofxShortVoxels & voxls, const ofBuffer & buffer){
-	return loadImage(voxls,buffer);
-}
-
-
 //----------------------------------------------------------------
-bool ofLoadVolume(ofxTexture3d & tex, string path){
+bool ofLoadVolume(ofxTexture3d & tex, string folder){
 	ofxVoxels voxels;
-	bool loaded = ofLoadVolume(voxels,path);
+	bool loaded = ofLoadVolume(voxels,folder);
 	if(loaded){
 		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
 		tex.loadData(voxels);
@@ -143,6 +143,29 @@ bool ofLoadVolume(ofxTexture3d & tex, string path){
 	return loaded;
 }
 
+/*
+// TODO: nothing really smart here for now. buffer probably does not make much sense for volumes.
+//----------------------------------------------------
+template<typename PixelType>
+static bool loadVolume(ofxVoxels_<PixelType> & voxls, const ofBuffer & buffer){
+loadVolume(voxls, buffer.getText());
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxShortVoxels & voxls, string path){
+	return loadVolume(voxls,path);
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxVoxels & voxls, const ofBuffer & buffer) {
+	return loadVolume(voxls,buffer);
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxFloatVoxels & voxls, const ofBuffer & buffer){
+	return loadVolume(voxls,buffer);
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxShortVoxels & voxls, const ofBuffer & buffer){
+	return loadVolume(voxls,buffer);
+}
 //----------------------------------------------------------------
 bool ofLoadVolume(ofxTexture3d & tex, const ofBuffer & buffer){
 	ofxVoxels voxels;
@@ -153,201 +176,84 @@ bool ofLoadVolume(ofxTexture3d & tex, const ofBuffer & buffer){
 	}
 	return loaded;
 }
+*/
 
 //----------------------------------------------------------------
 template<typename PixelType>
-static void saveImage(ofxVoxels_<PixelType> & voxls, string fileName, ofImageQualityType qualityLevel) {
-	/*
-	ofInitFreeImage();
-	if (voxls.isAllocated() == false){
-		ofLogError("ofImage") << "saveImage(): couldn't save \"" << fileName << "\", voxels are not allocated";
-		return;
-	}
+static void saveVolume(ofxVoxels_<PixelType> & voxls,
+					   string fileName = "",
+					   string folderName = "",
+					   ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST){
 
-	#ifdef TARGET_LITTLE_ENDIAN
-	if(sizeof(PixelType) == 1) {
-		voxls.swapRgb();
-	}
-	#endif
-
-	FIBITMAP * bmp	= getBmpFromPixels(voxls);
-
-	#ifdef TARGET_LITTLE_ENDIAN
-	if(sizeof(PixelType) == 1) {
-		voxls.swapRgb();
-	}
-	#endif
+	ofxImageSequence imageSequence;
+	ofDirectory	foldr(folderName);
 	
-	ofFilePath::createEnclosingDirectory(fileName);
-	fileName = ofToDataPath(fileName);
-	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-	fif = FreeImage_GetFileType(fileName.c_str(), 0);
-	if(fif == FIF_UNKNOWN) {
-		// or guess via filename
-		fif = FreeImage_GetFIFFromFilename(fileName.c_str());
+	if (foldr.path() == "../../../data")
+	{
+		ofLogNotice("ofxVolume::saveVolume") << "folderName is empty"<< endl;
+		folderName = ofGetTimestampString();
+		foldr.createDirectory(folderName);
+		ofLogNotice("ofxVolume::saveVolume") << "created dir="<< folderName << endl;
 	}
-	if((fif != FIF_UNKNOWN) && FreeImage_FIFSupportsReading(fif)) {
-		if(fif == FIF_JPEG) {
-			int quality = JPEG_QUALITYSUPERB;
-			switch(qualityLevel) {
-				case OF_IMAGE_QUALITY_WORST: quality = JPEG_QUALITYBAD; break;
-				case OF_IMAGE_QUALITY_LOW: quality = JPEG_QUALITYAVERAGE; break;
-				case OF_IMAGE_QUALITY_MEDIUM: quality = JPEG_QUALITYNORMAL; break;
-				case OF_IMAGE_QUALITY_HIGH: quality = JPEG_QUALITYGOOD; break;
-				case OF_IMAGE_QUALITY_BEST: quality = JPEG_QUALITYSUPERB; break;
-			}
-			FreeImage_Save(fif, bmp, fileName.c_str(), quality);
-		} else {
-			if(qualityLevel != OF_IMAGE_QUALITY_BEST) {
-				ofLogWarning("ofImage") << "saveImage(): ofImageCompressionType only applies to JPEGs,"
-					<< " ignoring value for \" "<< fileName << "\"";
-			}
-			
-			if (fif == FIF_GIF) {
-				FIBITMAP* convertedBmp;
-				if(voxls.getImageType() == OF_IMAGE_COLOR_ALPHA) {
-					// this just converts the image to grayscale so it can save something
-					convertedBmp = FreeImage_ConvertTo8Bits(bmp);
-				} else {
-					// this will create a 256-color palette from the image
-					convertedBmp = FreeImage_ColorQuantize(bmp, FIQ_NNQUANT);
-				}
-				FreeImage_Save(fif, convertedBmp, fileName.c_str());
-				if (convertedBmp != NULL){
-					FreeImage_Unload(convertedBmp);
-				}
-			} else {
-				FreeImage_Save(fif, bmp, fileName.c_str());
-			}
-		}
+	else if(!foldr.isDirectory())
+	{
+		ofLogVerbose("ofxVolume::saveVolume") << "folder does not exist"<< endl;
+		foldr.createDirectory(folderName);
+		ofLogNotice("ofxVolume::saveVolume") << "created dir="<< foldr.path()<< endl;
 	}
-
-	if (bmp != NULL){
-		FreeImage_Unload(bmp);
+	else if(foldr.isDirectory())
+	{
+		ofLogVerbose("ofxVolume::saveVolume") << "folderName exists"<< endl;
 	}
-	 
-	 */
+	
+    imageSequence.setFolder(folderName);
+    imageSequence.setFileName(fileName);
+	
+	imageSequence.startThread(false, true);
+	
+	// copy images to volume
+	for(int z=0; z<voxls.getDepth(); z++)
+	{
+		imageSequence.saveImage(voxls.getSlice(FRONT, z));
+	}
+	
+	ofLogNotice("ofxVolume::loadImageSequence") << "Volume saved.";
 }
 
 //----------------------------------------------------------------
-void ofSaveVolume(ofxVoxels & voxls, string fileName, ofImageQualityType qualityLevel){
-	saveImage(voxls,fileName,qualityLevel);
+void ofSaveVolume(ofxVoxels & voxls, string fileName, string folderName, ofImageQualityType qualityLevel){
+	saveVolume(voxls,fileName,folderName,qualityLevel);
 }
 
 //----------------------------------------------------------------
-void ofSaveVolume(ofxFloatVoxels & voxls, string fileName, ofImageQualityType qualityLevel) {
-	saveImage(voxls,fileName,qualityLevel);
+void ofSaveVolume(ofxFloatVoxels & voxls, string fileName, string folderName, ofImageQualityType qualityLevel) {
+	saveVolume(voxls,fileName,folderName,qualityLevel);
 }
 
 //----------------------------------------------------------------
-void ofSaveVolume(ofxShortVoxels & voxls, string fileName, ofImageQualityType qualityLevel) {
-	saveImage(voxls,fileName,qualityLevel);
+void ofSaveVolume(ofxShortVoxels & voxls, string fileName, string folderName, ofImageQualityType qualityLevel) {
+	saveVolume(voxls,fileName,folderName,qualityLevel);
 }
-
+/*
+// TODO: nothing really smart here for now. buffer probably does not make much sense for volumes.
 //----------------------------------------------------------------
 template<typename PixelType>
-static void saveImage(ofxVoxels_<PixelType> & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
-	// thanks to alvaro casinelli for the implementation
-/*
-	ofInitFreeImage();
-
-	if (voxls.isAllocated() == false){
-		ofLogError("ofImage","saveImage(): couldn't save to ofBuffer, voxels are not allocated");
-		return;
-	}
-
-	if(format==OF_IMAGE_FORMAT_JPEG && voxls.getNumChannels()==4){
-		ofxVoxels voxls3 = voxls;
-		voxls3.setNumChannels(3);
-		saveImage(voxls3,buffer,format,qualityLevel);
-		return;
-	}
-
-	#ifdef TARGET_LITTLE_ENDIAN
-	if(sizeof(PixelType) == 1) {
-		voxls.swapRgb();
-	}
-	#endif
-
-	FIBITMAP * bmp	= getBmpFromPixels(voxls);
-
-	#ifdef TARGET_LITTLE_ENDIAN
-	if(sizeof(PixelType) == 1) {
-		voxls.swapRgb();
-	}
-	#endif
-
-	if (bmp)  // bitmap successfully created
-	{
-		   // (b) open a memory stream to compress the image onto mem_buffer:
-		   //
-		   FIMEMORY *hmem = FreeImage_OpenMemory();
-		   // (c) encode and save the image to the memory (on dib FIBITMAP image):
-		   //
-		   if(FREE_IMAGE_FORMAT(format) == FIF_JPEG) {
-				int quality = JPEG_QUALITYSUPERB;
-				switch(qualityLevel) {
-					case OF_IMAGE_QUALITY_WORST: quality = JPEG_QUALITYBAD; break;
-					case OF_IMAGE_QUALITY_LOW: quality = JPEG_QUALITYAVERAGE; break;
-					case OF_IMAGE_QUALITY_MEDIUM: quality = JPEG_QUALITYNORMAL; break;
-					case OF_IMAGE_QUALITY_HIGH: quality = JPEG_QUALITYGOOD; break;
-					case OF_IMAGE_QUALITY_BEST: quality = JPEG_QUALITYSUPERB; break;
-				}
-				FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, quality);
-		   }else{
-				FreeImage_SaveToMemory((FREE_IMAGE_FORMAT)format, bmp, hmem);
-		   }
-*/
-		   /*
-
-		  NOTE: at this point, hmem contains the entire data in memory stored in fif format. the
-		  amount of space used by the memory is equal to file_size:
-		  long file_size = FreeImage_TellMemory(hmem);
-		  but can also be retrieved by FreeImage_AcquireMemory that retrieves both the
-		  length of the buffer, and the buffer memory address.
-		  */
-	/*
-			#ifdef TARGET_WIN32
-		   	   DWORD size_in_bytes = 0;
-			#else
-		   	   uint32_t size_in_bytes = 0;
-			#endif
-		   // Save compressed data on mem_buffer
-		   // note: FreeImage_AquireMemory allocates space for aux_mem_buffer):
-		   //
-		   unsigned char *mem_buffer = NULL;
-		   if (!FreeImage_AcquireMemory(hmem, &mem_buffer, &size_in_bytes))
-				   ofLogError("ofImage") << "saveImage(): couldn't save to ofBuffer, aquiring compressed image from memory failed";
-*/
-		   /*
-			  Now, before closing the memory stream, copy the content of mem_buffer
-			  to an auxiliary buffer
-		    */
-/*
-		   buffer.set((char*)mem_buffer,size_in_bytes);
-
-		   // Finally, close the FIBITMAP object, or we will get a memory leak:
-		   FreeImage_Unload(bmp);
-
-		   // Close the memory stream (otherwise we may get a memory leak).
-		   FreeImage_CloseMemory(hmem);
-	}
-*/
+static void saveVolume(ofxVoxels_<PixelType> & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
+	saveVolume(voxls, buffer.getText(), qualityLevel);
 }
-
 //----------------------------------------------------------------
 void ofSaveVolume(ofxVoxels & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
-	saveImage(voxls,buffer,format,qualityLevel);
+	saveVolume(voxls,buffer,format,qualityLevel);
 }
-
+//----------------------------------------------------------------
 void ofSaveVolume(ofxFloatVoxels & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
-	saveImage(voxls,buffer,format,qualityLevel);
+	saveVolume(voxls,buffer,format,qualityLevel);
 }
-
+//----------------------------------------------------------------
 void ofSaveVolume(ofxShortVoxels & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
-	saveImage(voxls,buffer,format,qualityLevel);
+	saveVolume(voxls,buffer,format,qualityLevel);
 }
-
+*/
 
 //-------------------------------------------------------------
 //  implementation
@@ -379,7 +285,7 @@ ofxVolumeT_<PixelType>::ofxVolumeT_(const ofxVoxels_<PixelType> & voxls){
 }
 
 template<typename PixelType>
-ofxVolumeT_<PixelType>::ofxVolumeT_(const ofFile & file){
+ofxVolumeT_<PixelType>::ofxVolumeT_(const ofDirectory & folder){
 	width						= 0;
 	height						= 0;
 	depth						= 0;
@@ -387,7 +293,7 @@ ofxVolumeT_<PixelType>::ofxVolumeT_(const ofFile & file){
 	type						= OF_IMAGE_UNDEFINED;
 	bUseTexture					= true;		// the default is, yes, use a texture
 
-	loadImage(file);
+	loadVolume(folder);
 }
 
 template<typename PixelType>
@@ -399,7 +305,7 @@ ofxVolumeT_<PixelType>::ofxVolumeT_(const string & filename){
 	type						= OF_IMAGE_UNDEFINED;
 	bUseTexture					= true;		// the default is, yes, use a texture
 
-	loadImage(filename);
+	loadVolume(filename);
 }
 
 //----------------------------------------------------------
@@ -440,20 +346,20 @@ void ofxVolumeT_<PixelType>::reloadTexture(){
 
 //----------------------------------------------------------
 template<typename PixelType>
-bool ofxVolumeT_<PixelType>::loadImage(const ofFile & file){
-	return loadImage(file.getAbsolutePath());
+bool ofxVolumeT_<PixelType>::loadVolume(const ofDirectory & folder){
+	return loadVolume(folder.getAbsolutePath());
 }
 
 //----------------------------------------------------------
 template<typename PixelType>
-bool ofxVolumeT_<PixelType>::loadImage(string fileName){
-/*
+bool ofxVolumeT_<PixelType>::loadVolume(string fileName){
+
 #if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
 	registerImage(this);
 #endif
 	bool bLoadedOk = ofLoadVolume(voxels, fileName);
 	if (!bLoadedOk) {
-		ofLogError("ofImage") << "loadImage(): couldn't load image from \"" << fileName << "\"";
+		ofLogError("ofImage") << "loadVolume(): couldn't load image from \"" << fileName << "\"";
 		clear();
 		return false;
 	}
@@ -465,18 +371,18 @@ bool ofxVolumeT_<PixelType>::loadImage(string fileName){
 	}
 	update();
 	return bLoadedOk;
- */
 }
 
-template<typename PixelType>
-bool ofxVolumeT_<PixelType>::loadImage(const ofBuffer & buffer){
 /*
+template<typename PixelType>
+bool ofxVolumeT_<PixelType>::loadVolume(const ofBuffer & buffer){
+
 #if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
 	registerImage(this);
 #endif
 	bool bLoadedOk = ofLoadVolume(voxels, buffer);
 	if (!bLoadedOk) {
-		ofLogError("ofImage") << "loadImage(): couldn't load image from ofBuffer";
+		ofLogError("ofImage") << "loadVolume(): couldn't load image from ofBuffer";
 		clear();
 		return false;
 	}
@@ -488,26 +394,26 @@ bool ofxVolumeT_<PixelType>::loadImage(const ofBuffer & buffer){
 	}
 	update();
 	return bLoadedOk;
- */
+ 
 }
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolumeT_<PixelType>::saveVolume(ofBuffer & buffer, ofImageQualityType qualityLevel){
+ ofSaveVolume(voxels, buffer, qualityLevel);
+}
+*/
 
 //----------------------------------------------------------
 template<typename PixelType>
-void ofxVolumeT_<PixelType>::saveImage(string fileName, ofImageQualityType qualityLevel){
-	ofSaveVolume(voxels, fileName, qualityLevel);
+void ofxVolumeT_<PixelType>::saveVolume(string fileName, string folderName, ofImageQualityType qualityLevel){
+	ofSaveVolume(voxels,fileName,folderName,qualityLevel);
 }
-
 //----------------------------------------------------------
 template<typename PixelType>
-void ofxVolumeT_<PixelType>::saveImage(ofBuffer & buffer, ofImageQualityType qualityLevel){
-	ofSaveVolume(voxels, buffer, qualityLevel);
+void ofxVolumeT_<PixelType>::saveVolume(const ofDirectory & folder, ofImageQualityType qualityLevel){
+	ofSaveVolume(voxels,"",folder.getAbsolutePath(),qualityLevel);
 }
 
-//----------------------------------------------------------
-template<typename PixelType>
-void ofxVolumeT_<PixelType>::saveImage(const ofFile & file, ofImageQualityType compressionLevel){
-	ofSaveVolume(voxels,file.getAbsolutePath(),compressionLevel);
-}
 
 // we could cap these values - but it might be more useful
 // to be able to set anchor points outside the image
@@ -1090,7 +996,7 @@ float ofxVolumeT_<PixelType>::getDepth() {
 /*
 //----------------------------------------------------------
 // Sosolimited: texture compression
-// call this function before you call loadImage()
+// call this function before you call loadVolume()
 template<typename PixelType>
 void ofxVolumeT_<PixelType>::setCompression(ofTexCompression compression)
 {

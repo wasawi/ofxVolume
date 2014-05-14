@@ -14,10 +14,13 @@ public:
 	ofxImageSequence() {
 		recCounter	= 0;
 		totalFrames = 0;
-		
+		prefix = "";
 	};
+	
 	//----------------------------------------------------------
-	void setup(string prefix, int digits, string extension, int start) {
+	// loader
+	//----------------------------------------------------------
+	bool setup(string prefix, int digits, string extension, int start) {
 		loadFromFolder = false;
 		curFrame = start;
 		startFrame = start;
@@ -30,7 +33,7 @@ public:
 		
 		if(!initialized){
 			ofLogWarning() << "ofxImageSequence: unable to load inital image in the sequence: " << generateFullFilename();
-			return;
+			return false;
 		}
 		
 		ofFile testFile;
@@ -42,9 +45,10 @@ public:
 		}
 		testFile.close();
 		curFrame = startFrame;
+		return true;
 	};
 	//----------------------------------------------------------
-	void setup(string _folder){
+	bool setup(string _folder){
 		loadFromFolder = true;
 		totalFrames = 0;
 		curFrame = 0;
@@ -54,9 +58,11 @@ public:
 		totalFrames = dir.listDir(_folder);
 		dir.sort();
 		
-		if(!totalFrames)ofLog(OF_LOG_ERROR, "Could not find folder " + _folder);
+		if(!totalFrames){
+			ofLog(OF_LOG_ERROR, "Could not find folder " + _folder);
+			return false;
+		}
 		initialized = loadImage(dir.getPath(curFrame));
-		
 		
 		ofFile testFile;
 		while(testFile.open(dir.getPath(curFrame)))
@@ -66,6 +72,7 @@ public:
 			testFile.close();
 		}
 		testFile.close();
+		return true;
 	}
 	//----------------------------------------------------------
 	bool loadNextFrame() {
@@ -114,49 +121,59 @@ public:
         while(isThreadRunning()) {
             if(!q.empty()){
                 QueuedImage i = q.front();
-                ofSaveImage(i.image, i.fileName);
-                q.pop();
+                ofSaveImage(i.image, i.fullPath);
+				q.pop();
             }
         }
     }
 	//----------------------------------------------------------
-    void addFrame(ofPixels imageToSave) {
+    void saveImage(ofPixels imageToSave) {
 		
-        char fileName[100];
-        sprintf(fileName,  "%s%.4i.%s" , prefix.c_str(), recCounter, format.c_str());
+        char fullPath[100];
+        sprintf(fullPath,  "%s/%s%.4i.%s" , folderName.c_str(), prefix.c_str(), recCounter, extension.c_str());
         recCounter++;
         
         QueuedImage qImage;
         
-        qImage.fileName = fileName;
+        qImage.fullPath = fullPath;
         qImage.image = imageToSave;
         
         q.push(qImage);
         
     }
+
 	//----------------------------------------------------------
-	void addFrame(ofImage &img){
-        addFrame(img.getPixelsRef());
-    }
-	
+	void setFileName(string name){
+		vector <string> split = ofSplitString(name, ".");
+		prefix		= split[0];
+		extension	= split[1];
+	}
+	//----------------------------------------------------------
 	typedef struct {
-		string fileName;
+		string fullPath;
 		ofPixels image;
 	} QueuedImage;
+
 	
+	//----------------------------------------------------------
+	bool isInitialized() {					return initialized; }
+	void saveImage(ofImage &img){			saveImage(img.getPixelsRef());}
 	
 	//----------------------------------------------------------
 	// setters
 	//----------------------------------------------------------
-	void setPrefix(string pre){ prefix = pre;}
-	void setFormat(string fmt){ format = fmt;}
-	void setCurrentFrameNumber(int i) { curFrame = startFrame + i; }
+	void setFolder(string fold){			folderName = fold;}
+	void setPrefix(string pre){				prefix = pre;}
+	void setExtension(string ext){			extension = ext;}
+	void setFormat(ofImageFormat fmt){		format = fmt;}
+	void setFormat(ofImageQualityType q){	qualityLevel = q;}
+	void setCurrentFrameNumber(int i) {		curFrame = startFrame + i; }
 	//----------------------------------------------------------
 	//getters
 	//----------------------------------------------------------
 	int	getCurrentFrameNumber() { return curFrame - startFrame; }
 	int getSequenceLength() { return totalFrames; }
-	bool isInitialized() { return initialized; }
+	
 	
 private:
 	bool initialized;
@@ -169,8 +186,10 @@ private:
 	
 	// recorder
 	int recCounter;
-    queue<QueuedImage> q;
-    string prefix;
-    string format;
-	
+    queue<QueuedImage>	q;
+    string				folderName;
+    string				prefix;
+    string				extension;
+	ofImageFormat		format;
+	ofImageQualityType	qualityLevel;
 };

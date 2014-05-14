@@ -1,6 +1,4 @@
 #pragma once
-
-
 #include "ofFileUtils.h"
 #include "ofTexture.h"
 #include "ofBaseTypes.h"
@@ -10,28 +8,46 @@
 #include "ofxVoxels.h"
 #include "ofxImageSequence.h"
 
+/*      ofxVolume - process volumetric data on the CPU
+ 
+ Most of the code has its origins in ofImage and ofPixels.
+ Adapted by Jordi Puig (http://wasawi.com).
+ Use at your own risk and
+ Please let me know if anything is not working.
+ Use ofxVolumetrix for rendering.
+ */
+
+
 //----------------------------------------------------
 // Image based stuff:
 bool ofLoadVolume(ofxVoxels & voxls, string folder);
-bool ofLoadVolume(ofxVoxels & voxls, const ofBuffer & buffer);
-
 bool ofLoadVolume(ofxFloatVoxels & voxls, string folder);
-bool ofLoadVolume(ofxFloatVoxels & voxls, const ofBuffer & buffer);
-
 bool ofLoadVolume(ofxShortVoxels & voxls, string folder);
-bool ofLoadVolume(ofxShortVoxels & voxls, const ofBuffer & buffer);
-
 bool ofLoadVolume(ofxTexture3d & tex, string folder);
-bool ofLoadVolume(ofxTexture3d & tex, const ofBuffer & buffer);
 
-void ofSaveVolume(ofxVoxels & voxls, string folder, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
-void ofSaveVolume(ofxVoxels & voxls, ofBuffer & buffer, ofImageFormat format = OF_IMAGE_FORMAT_PNG, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
+void ofSaveVolume(ofxVoxels & voxls,
+				  string fileName = "",
+				  string folderName = "",
+				  ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
 
-void ofSaveVolume(ofxFloatVoxels & voxls, string folder, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
-void ofSaveVolume(ofxFloatVoxels & voxls, ofBuffer & buffer, ofImageFormat format = OF_IMAGE_FORMAT_PNG, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
+void ofSaveVolume(ofxFloatVoxels & voxls,
+				  string fileName = "",
+				  string folderName = "",
+				  ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
 
-void ofSaveVolume(ofxShortVoxels & voxls, string folder, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
-void ofSaveVolume(ofxShortVoxels & voxls, ofBuffer & buffer, ofImageFormat format = OF_IMAGE_FORMAT_PNG, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
+void ofSaveVolume(ofxShortVoxels & voxls,
+				  string fileName = "",
+				  string folderName = "",
+				  ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
+
+// ofBuffer is not implemented. probably it doesn't make much sense.
+//bool ofLoadVolume(ofxVoxels & voxls, const ofBuffer & buffer);
+//bool ofLoadVolume(ofxFloatVoxels & voxls, const ofBuffer & buffer);
+//bool ofLoadVolume(ofxShortVoxels & voxls, const ofBuffer & buffer);
+//bool ofLoadVolume(ofxTexture3d & tex, const ofBuffer & buffer);
+//void ofSaveVolume(ofxVoxels & voxls, ofBuffer & buffer, ofImageFormat format = OF_IMAGE_FORMAT_PNG, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
+//void ofSaveVolume(ofxFloatVoxels & voxls, ofBuffer & buffer, ofImageFormat format = OF_IMAGE_FORMAT_PNG, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
+//void ofSaveVolume(ofxShortVoxels & voxls, ofBuffer & buffer, ofImageFormat format = OF_IMAGE_FORMAT_PNG, ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
 
 //----------------------------------------------------
 template<typename PixelType>
@@ -43,7 +59,7 @@ class ofxVolumeT_{// : public ofBaseImage_<PixelType>{
 		virtual ~ofxVolumeT_();
 
 		ofxVolumeT_(const ofxVoxels_<PixelType> & voxls);
-		ofxVolumeT_(const ofFile & file);
+		ofxVolumeT_(const ofDirectory & folder);
 		ofxVolumeT_(const string & filename);
 
 		// allocation / deallocation routines
@@ -76,12 +92,16 @@ class ofxVolumeT_{// : public ofBaseImage_<PixelType>{
 		void unbind();
 
 		// file loading / saving
-		bool 				loadImage(string fileName);
-		bool				loadImage(const ofBuffer & buffer);
-		bool 				loadImage(const ofFile & file);
-		void 				saveImage(string fileName, ofImageQualityType compressionLevel = OF_IMAGE_QUALITY_BEST);
-		void 				saveImage(ofBuffer & buffer, ofImageQualityType compressionLevel = OF_IMAGE_QUALITY_BEST);
-		void 				saveImage(const ofFile & file, ofImageQualityType compressionLevel = OF_IMAGE_QUALITY_BEST);
+		bool 	loadVolume(string folder);
+		bool 	loadVolume(const ofDirectory & folder);
+		void 	saveVolume(string fileName = "",
+						   string folderName = "",
+						   ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST);
+		void 	saveVolume(const ofDirectory & folder,
+						   ofImageQualityType compressionLevel = OF_IMAGE_QUALITY_BEST);
+
+	//		bool				loadVolume(const ofBuffer & buffer);
+	//		void 				saveVolume(ofBuffer & buffer, ofImageQualityType compressionLevel = OF_IMAGE_QUALITY_BEST);
 
 		// Sosolimited: texture compression and mipmaps
 		void				setCompression(ofTexCompression compression);
