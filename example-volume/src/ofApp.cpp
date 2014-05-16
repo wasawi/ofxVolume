@@ -71,7 +71,7 @@ void ofApp::draw()
 		volumeRender.update();
 		cam.end();
 		
-		//volumeRender.draw(0, ofGetHeight(), ofGetWidth(), -ofGetHeight());
+		volumeRender.draw(0, ofGetHeight(), ofGetWidth(), -ofGetHeight());
 		if (blabels){
 			drawLabels();
 		}
