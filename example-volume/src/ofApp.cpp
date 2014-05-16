@@ -50,8 +50,8 @@ void ofApp::initVolume()
 //	volume.loadAsRGBA("volumes/Colin27T1_tight/");
 //	volume.loadColorPow2("volumes/Colin27T1_tight/");
 
-	bPow2	= volume.getVoxelsRef().isPow2();
-	format	= volume.getVoxelsRef().getGlFormat();
+//	bPow2	= volume.getVoxelsRef().isPow2();
+//	format	= volume.getVoxelsRef().getGlFormat();
 	
 	// Init Volume Rendering
 //    volumeRender.setup(&volume, ofVec3f(1,1,1), bPow2, format);
