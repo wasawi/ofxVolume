@@ -42,17 +42,20 @@ void ofApp::setup()
 void ofApp::initVolume()
 {
 	// Init Volume
-	volume.loadImageSequence("volumes/Colin27T1_tight/");
+	volume.loadVolume("volumes/Colin27T1_tight/");
+//	volume.loadVolume("2014-05-16-12-26-30-216");
+//	volume.setImageType(OF_IMAGE_COLOR_ALPHA);
 //	volume.loadImageSequence("volumes/talairach_nii/");
 
 //	volume.loadAsRGBA("volumes/Colin27T1_tight/");
 //	volume.loadColorPow2("volumes/Colin27T1_tight/");
 
-	bPow2	= volume.isPow2();
-	format	= volume.getGlFormat();
+	bPow2	= volume.getVoxelsRef().isPow2();
+	format	= volume.getVoxelsRef().getGlFormat();
 	
 	// Init Volume Rendering
-    volumeRender.setup(&volume, ofVec3f(1,1,1), bPow2, format);
+//    volumeRender.setup(&volume, ofVec3f(1,1,1), bPow2, format);
+    volumeRender.setup(&volume);
 	volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
 	volumeRender.setDithering(dithering);
 	volumeRender.setClipDepth(clipPlaneDepth);
@@ -88,8 +91,9 @@ void ofApp::keyPressed(int key)
             break;
         case 's':
             cout << "Start saving..." << endl;
-			date=ofGetTimestampString();
-			//			gifEncoder.save(date+".gif");
+//			date=ofGetTimestampString();
+//			gifEncoder.save(date+".gif");
+			volume.saveVolume("i_.png");
             break;
 		case 'h':
 			blabels=!blabels;
@@ -99,33 +103,11 @@ void ofApp::keyPressed(int key)
 			break;
 		case 'a':
 //			volume.mirror(false, true, false);
-//			volume.swapRgb();
-//			volume.colourRandomVoxels(200);
-			volume.colourRandomBoxes(2);
-//			volume.setColor(ofColor::grey);
-			volumeRender.setVolume(&volume, bPow2, format);
+//			volume.setImageType(OF_IMAGE_COLOR_ALPHA);
+			volume.grabScreen(ofGetMouseX(), ofGetMouseY());
+//			volume.setColor(ofColor::magenta);
+			volumeRender.setVolume(&volume);
 
-//			cout << "size = "<<volume.getTotalSize() << endl;
-//			volume.setImageType(OF_IMAGE_GRAYSCALE);
-//			cout << "size = "<<volume.getTotalSize() << endl;
-			//			volume.rotate90(1);
-//			cout << volume.getWidth() <<"x"<<volume.getHeight() <<"x"<<volume.getDepth() <<"\n";
-//			cout << imageSequence.getWidth() <<"x"<<imageSequence.getHeight() <<"x"<<imageSequence.getSequenceLength() <<"\n";
-//			volumeRender.setup(&volume, ofVec3f(1,1,1), true, GL_LUMINANCE);
-//			volumeRender.setVolume(&volume, true, GL_LUMINANCE);
-//			volumeRender.updateVolumeData(volumeData, imageSequence.getWidth(), imageSequence.getHeight(), imageSequence.getSequenceLength(),0,0,0);
-/*			if (bNew){
-//				volumeRender.setVolume(&volume, true, GL_RGBA);
-				//volumeRender.setup(&volume, ofVec3f(1,1,1), true, GL_RGBA);
-				volumeRender.updateVolumeData(volume.getVoxels(), volume.getWidth(), volume.getHeight(), volume.getDepth(),0,0,0);
-			}else{
-//				volumeRender.setVolume(&volume, false, GL_RGBA);
-				volumeRender.updateVolumeData(volume.getVoxels(), volume.getWidth(), volume.getHeight(), volume.getDepth(),0,0,0);
-//				volumeRender.updateVolumeData(volumeData, volume.getWidth(), volume.getHeight(), volume.getDepth(),0,0,0);
-			}
-*/			//			volumeRender.setVolume(volumeData, volume.getSize(), false, GL_RGBA);
-			//			volumeRender.setVolume(volume.getVoxelsData());
-			//			volumeRender.setup(&volume, false, GL_LUMINANCE);
 			break;
 			
 		case 't':
@@ -284,7 +266,7 @@ void ofApp::drawLabels()
 //--------------------------------------------------------------
 void ofApp::selectVoxels()
 {
-	vector<ofxIntBox> boxes;
+/*	vector<ofxIntBox> boxes;
 	
 	ofxIntPoint position	= ofVec3f(ofRandom(100));
 	ofxIntPoint size		= ofVec3f(ofRandom(10));
@@ -293,10 +275,12 @@ void ofApp::selectVoxels()
 	boxes.push_back(box);
 	
 	volume.selectVoxels(boxes);
+*/
 }
 //--------------------------------------------------------------
 void ofApp::paintRandomBoxes()
 {
+	/*
 	ofxIntPoint position	= ofVec3f(ofRandom(100));
 	ofxIntPoint size		= ofVec3f(ofRandom(10), ofRandom(5), ofRandom(5));
 	
@@ -310,6 +294,7 @@ void ofApp::paintRandomBoxes()
 		volume.setColor(p.x,p.y,p.z, ofColor::white);
 	}
 	volumeRender.setVolume(&volume, bPow2, format);
+	 */
 }
 
 

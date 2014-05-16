@@ -1087,7 +1087,6 @@ ofPixels_<PixelType> ofxVoxels_<PixelType>::getSlice(SliceViewPoint vp, int offs
 	if( !bAllocated )
 	{
 		ofLogError("ofxVoxels") << "getSlice(): not Allocated. Returning empty slice.\n";
-		return slice;
 	}
 	else if (offset >= nslices)
 	{
@@ -1096,12 +1095,13 @@ ofPixels_<PixelType> ofxVoxels_<PixelType>::getSlice(SliceViewPoint vp, int offs
 		"is highter or equal to volume slice count" <<
 		nslices<<
 		". Returning empty slice.\n";
-		return slice;
 	}else{
 	
 		copySliceTo( slice, vp, offset );
 		
 	}
+	
+	return slice;
 }
 
 //-------------------------------------------------------------- OK? to test

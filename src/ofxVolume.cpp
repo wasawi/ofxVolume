@@ -1,670 +1,861 @@
-/*  ofxVolume - draw ofxVolumetric data
- Created by Jordi on 01/04/14.
- */
+#include "ofImage.h"
+#include "ofAppRunner.h"
+#include "ofTypes.h"
+#include "ofURLFileLoader.h"
+#include "ofGraphics.h"
+#include "FreeImage.h"
 
 #include "ofxVolume.h"
 
-/*
-ofxVolume::ofxVolume()
-{
+#if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
+#include <set>
+// android destroys the opengl context on screen orientation change
+// or when the application runs in the background so we need to reload
+// all the textures when the context is created again.
+// keeping a pointer to all the images we can tell them to reload from a static method
+static set<ofImage *> & all_images(){
+	static set<ofImage *> * images = new set<ofImage *>;
+	return *images;
 }
-//--------------------------------------------------------------
-ofxVolume::~ofxVolume()
-{
+static set<ofFloatImage *> & all_float_images(){
+	static set<ofFloatImage *> * images = new set<ofFloatImage *>;
+	return *images;
 }
-*/
 
-//--------------------------------------------------------------
-// it loads the volume with the same amount of channels of the image
-void ofxVolume::loadImageSequence(string path, bool forcePow2)
-{
-	ofxImageSequencePlayer imageSequence;
-	imageSequence.init(path + "IM-0001-0", 3, ".tif", 0);
-		
+static set<ofShortImage *> & all_short_images(){
+	static set<ofShortImage *> * images = new set<ofShortImage *>;
+	return *images;
+}
+
+static void registerImage(ofImage * img){
+	all_images().insert(img);
+}
+
+static void registerImage(ofFloatImage * img){
+	all_float_images().insert(img);
+}
+
+static void registerImage(ofShortImage * img){
+	all_short_images().insert(img);
+}
+
+static void unregisterImage(ofImage * img){
+	all_images().erase(img);
+}
+
+static void unregisterImage(ofFloatImage * img){
+	all_float_images().erase(img);
+}
+
+static void unregisterImage(ofShortImage * img){
+	all_short_images().erase(img);
+}
+
+void ofReloadAllImageTextures(){
+	set<ofImage *>::iterator it;
+	for(it=all_images().begin(); it!=all_images().end(); it++){
+		(*it)->reloadTexture();
+	}
+	set<ofFloatImage *>::iterator f_it;
+	for(f_it=all_float_images().begin(); f_it!=all_float_images().end(); f_it++){
+		(*f_it)->reloadTexture();
+	}
+}
+#endif
+
+
+template<typename PixelType>
+static bool loadVolume(ofxVoxels_<PixelType> & voxls, string folder, bool forcePow2=false){
+	/*
+	 TODO:
+	 Loading from url not implemented.
+	 */
+
+	ofxImageSequence imageSequence;
+	if (!imageSequence.setupLoad(folder)) return false;
+	
 	// get image attributes
-	w	= imageSequence.getWidth();
-    h	= imageSequence.getHeight();
-    d	= imageSequence.getSequenceLength();
+	int w	= imageSequence.getWidth();
+    int h	= imageSequence.getHeight();
+    int d	= imageSequence.getSequenceLength();
 	int channels		= imageSequence.getPixelsRef().getNumChannels();
 	int bytesPerChannel = imageSequence.getPixelsRef().getBytesPerChannel();
-
-	ofLogNotice("ofxVolume::loadImageSequence") << "Loading volume "
+	
+	ofLogNotice("ofxVolume::loadVolume") << "Loading volume "
 	<< w << "x" << h << "x" << d
 	<< " channels= "<<channels
 	<< " bytesPerChannel= "<<bytesPerChannel;
-	
-	/*
-	 create pixelType depending on image pixelType
-	 This will happen when I make a template of this class.
-	 and this code won't be required:
-	 
-	 // allocate depending on byteSize
-	 if (bytesPerChannel==1){
-	 ofPixels voxels;
-	 allocate(w, h, d, channels);
-	 }else if (bytesPerChannel==2){
-	 ofShortPixels voxels;
-	 allocate(w, h, d, channels);
-	 }else if (bytesPerChannel==4){
-	 ofFloatPixels voxels;
-	 allocate(w, h, d, channels);
-	 }else{
-	 ofLogError("ofxVolume::loadImageSequence") << "unknown ByteType"<< endl;
-	 }
-	 */
-	
-	unsigned char* voxels;
-	voxels = new unsigned char[(int) (w*h*d)*channels];
+		
+	if (forcePow2){
+		// override dimensions to pow2
+		// this will creat an added padding to the volume
+		w = ofNextPow2(w);
+		h = ofNextPow2(h);
+		d = ofNextPow2(d);
+		ofLogNotice("ofxVolume::loadVolume") << "forcing pow2 size "
+		<< ofNextPow2(w) << "x" << ofNextPow2(h)<< "x" << ofNextPow2(d) << " channels= "<<channels;
+	}
+
+	voxls.allocate(w, h, d, channels);
 	
 	// copy images to volume
 	for(int z=0; z<d; z++)
 	{
-		imageSequence.loadFrame(z);
+		bool success = imageSequence.loadFrame(z);
+//		ofLogVerbose("ofxVolume::loadVolume") << "loading img "<<z;
+
+//		this would be nicer but imageSequence is not templated:
+//		voxls.copyFrontSliceFrom(imageSequence.getPixels(), z);
+
 		for(int y=0; y<h; y++)
 		{
 			for(int x=0; x<w; x++)
 			{
 				// get values from image
-				int i = (x + (y*w) + z*w*h) * channels;		// cursor position at Volume
-				int sample = (x+ (y*w)) * channels;			// cursor position at Image
+				int dstVox = (x + (y*w) + z*w*h);	// cursor position at Volume
+				int srcPix = (x+ (y*w));			// cursor position at Image
 				
-				voxels[i] = imageSequence.getPixels()[sample];	// r
-				
-				if (channels>1)
-				{
-					voxels[i+1] = imageSequence.getPixels()[sample+1];	// g
-					voxels[i+2] = imageSequence.getPixels()[sample+2];	// b
-				}
-				if (channels == 4)
-				{
-					voxels[i+3] = imageSequence.getPixels()[sample+3];	// a
-				}
-			}
-		}
-	}//end for
-
-	if (forcePow2){
-		ofxVoxels origin;
-		origin.setFromVoxels(voxels, w, h, d, channels);
-		
-		// we will put the original pixels here with an added padding
-		allocate(ofNextPow2(w), ofNextPow2(h),ofNextPow2(d), channels);
-		origin.pasteInto(*this, 0, 0, 0);
-		
-		ofLogNotice("ofxVolume::loadImageSequence") << "forcing pow2 size "
-		<< ofNextPow2(w) << "x" << ofNextPow2(h)<< "x" << ofNextPow2(d) << " channels= "<<channels;
-		ofLogNotice("ofxVolume::loadImageSequence") << "Volume loaded.";
-	}
-	else
-	{
-		setFromVoxels(voxels, w, h, d, channels);
-		ofLogNotice("ofxVolume::loadImageSequence") << "Volume loaded.";
-	}
-}
-
-
-//--------------------------------------------------------------
-void ofxVolume::loadColorPow2(string path)
-{
-	ofxImageSequencePlayer imageSequence;
-	imageSequence.init(path + "IM-0001-0", 3, ".tif", 0);
-	
-	int channels =4;
-	
-	// calculate ofxVolume size
-	w	= imageSequence.getWidth();
-    h	= imageSequence.getHeight();
-    d	= imageSequence.getSequenceLength();
-	
-	ofLogNotice("ofxVolume::loadColor") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
-	unsigned char* voxels;
-	voxels = new unsigned char[(int) (w*h*d)*channels];
-	// fill my array with voxels
-    for(int z=0; z<d; z++)
-    {
-        imageSequence.loadFrame(z);
-		for(int y=0; y<h; y++)
-        {
-			for(int x=0; x<w; x++)
-			{
-				if (x<w && y<h)
-				{													// get values from image
-					int i = ((x + y*w) + z*w*h)*channels;			// the pointer position at Array
-					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
-					ofColor c;
-					c.set(sample);
-					
-					voxels[i] = c.r;
-					voxels[i+1] = c.g;
-					voxels[i+2] = c.b;
-					voxels[i+3] = sample;
-					//					ofLogVerbose("vizManager") << sample << " ";
-				}
-            }
-        }
-    }//end for
-	
-	ofxVoxels origin;
-	origin.setFromVoxels(voxels, w, h, d, channels);
-	
-	// we will put the original pixels here with an added padding
-	allocate(ofNextPow2(w), ofNextPow2(h),ofNextPow2(d), channels);
-	origin.pasteInto(*this, 0, 0, 0);
-}
-
-
-void ofxVolume::loadAsRGBA(string path)
-{
-	ofxImageSequencePlayer imageSequence;
-	imageSequence.init(path + "IM-0001-0", 3, ".tif", 0);
-	
-	int channels =4;
-	
-	// calculate ofxVolume size
-	w	= imageSequence.getWidth();
-    h	= imageSequence.getHeight();
-    d	= imageSequence.getSequenceLength();
-	
-	ofLogNotice("ofxVolume::loadColor") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
-	unsigned char* voxels;
-	voxels = new unsigned char[(int) (w*h*d)*channels];
-	// fill my array with voxels
-    for(int z=0; z<d; z++)
-    {
-        imageSequence.loadFrame(z);
-		for(int y=0; y<h; y++)
-        {
-			for(int x=0; x<w; x++)
-			{
-				if (x<w && y<h)
-				{													// get values from image
-					int i = ((x + y*w) + z*w*h)*channels;			// the pointer position at Array
-					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
-					ofColor c;
-					c.set(sample);
-					//c.setHsb(sample, 255-sample, sample);
-					
-					voxels[i] = c.r;
-					voxels[i+1] = c.g;
-					voxels[i+2] = c.b;
-					voxels[i+3] = sample;
-					//					ofLogVerbose("vizManager") << sample << " ";
-				}
-            }
-        }
-    }//end for
-	setFromVoxels(voxels, w, h, d, 4);
-}
-void ofxVolume::loadMono(string path)
-{
-	ofxImageSequencePlayer imageSequence;
-	imageSequence.init(path + "IM-0001-0", 3, ".tif", 0);
-	
-	// calculate ofxVolume size
-	w	= imageSequence.getWidth();
-    h	= imageSequence.getHeight();
-    d	= imageSequence.getSequenceLength();
-	
-	ofLogNotice("ofxVolume::loadMono") << "setting up ofxVolume data buffer at " << w << "x" << h << "x" << d;
-	unsigned char* voxels;
-	voxels = new unsigned char[(int) (w*h*d)];
-	// fill my array with voxels
-    for(int z=0; z<d; z++)
-    {
-        imageSequence.loadFrame(z);
-		for(int y=0; y<h; y++)
-        {
-			for(int x=0; x<w; x++)
-			{
-				if (x<w && y<h)
-				{													// get values from image
-					int i = ((x + y*w) + z*w*h);					// the pointer position at Array
-					int sample = imageSequence.getPixels()[(int)(x+y*w)];		// the pixel on the image
-					//					voxels[i] = sample;
-					voxels[i]=sample;
-					//					ofLogVerbose("vizManager") << sample << " ";
-				}
-            }
-        }
-    }//end for
-	setFromVoxels(voxels, w, h, d, 1);
-}
-
-//--------------------------------------------------------------
-void ofxVolume::setup(float bW, float bH)
-{
-	boxW		= bW;
-	boxH		= bH;
-	
-	// Needed to align the ofxVolume at the center of the box
-	// Attention! this is not correct..
-	// will give problems if W & H are not d same
-	halfH = (boxW - h) /2;
-	halfW = (boxW - w) /2;
-	halfD = (boxW - d) /2;
-	
-	//allocate my pixls type of the image slices
-	coronalPixels.allocate(w, d, OF_IMAGE_GRAYSCALE);
-	coronalPixels.set(255);
-	sagittalPixels.allocate(d, h, OF_IMAGE_GRAYSCALE);
-	sagittalPixels.set(255);
-	axialPixels.allocate(w, h, OF_IMAGE_GRAYSCALE);
-	axialPixels.set(255);	
-}
-
-//--------------------------------------------------------------
-ofColor ofxVolume::getCursorColor()
-{
-	ofColor value;
-	value = getColor(sagittalS, coronalS, axialS);
-	return value;
-}
-
-//--------------------------------------------------------------
-ofxIntPoint ofxVolume::getCursorCoords(int _index)
-{
-	ofxIntPoint value;
-	value = getVoxelCoordinates(_index);
-	return value;
-}
-//--------------------------------------------------------------
-int ofxVolume::getCursorID()
-{
-	int value;
-	value = getVoxelID(sagittalS, coronalS, axialS);
-	return value;
-}
-
-//--------------------------------------------------------------
-bool ofxVolume::getVoxelCoordAndVal(int _index, ofxIntPoint& _coord, int& _val){
-	
-	ofxIntPoint value(0);
-	int row=0;
-	int page=0;
-	int index=0;
-	
-	for(int z=0; z<d; z++){
-		value.z=z;
-		
-		for(int y=0; y<h; y++){
-			value.y=y;
-			
-			for(int x=0; x<w; x++){
-				value.x=x;
-				
-				row = y*w;
-				page = z*w*h;
-				index = x + row + page;
-				
-				if (_index==index){
-					value= ofxIntPoint(x,y,z);
-
-					_coord= value;
-					_val= getVoxels()[index];
-//					ofLogVerbose("ofxVolume") << "voxelCoord= " << _coord;
-//					ofLogVerbose("ofxVolume") << "voxelVal= " << _val;
-					return true;
-				}
-			}
-		}
-	}
-	//not found
-	return false;
-}
-
-
-//--------------------------------------------------------------
-int ofxVolume::getVoxelNumber(){
-	
-	int value	=0;
-	for(int z=0; z<d; z++){
-		if (z==axialS){
-			for(int y=0; y<h; y++){
-				if (y==coronalS) {
-					for(int x=0; x<w; x++){
-						if (x==sagittalS){
-							int line = y*w;
-							int page = z*w*h;
-							int i = x + line + page;			// the pointer position at Array
-							value= i;							// the pixel on the image
-						}
-					}
+				for (int l = 0; l < channels; l++){
+					voxls[dstVox* channels + l] = imageSequence.getPixels()[srcPix* channels + l];
 				}
 			}
 		}
 	}
 	
-	ofLogVerbose("ofxVolume") << "voxelNumber= " << value;
-	return value;
-}
-
-//--------------------------------------------------------------
-void ofxVolume::colourRandomVoxels(int count)
-{
-	// calculate ofxVolume size
-	w	= getWidth();
-    h	= getHeight();
-    d	= getDepth();
-	
-	for(int i=0; i<count; i++)
-    {
-		ofColor newColor;
-		newColor.set(ofRandom(255), ofRandom(255), ofRandom(255), ofRandom(255));
-		setColor(ofRandom(w), ofRandom(h), ofRandom(d), newColor);
-	}
-}
-
-//--------------------------------------------------------------
-void ofxVolume::colourRandomBoxes(int count)
-{
-	// calculate ofxVolume size
-	w	= getWidth();
-    h	= getHeight();
-    d	= getDepth();
-	
-	for(int i=0; i<count; i++)
-    {
-		ofColor newColor;
-		newColor.set(ofRandom(255));
-		
-		ofxIntPoint position	= ofVec3f(ofRandom(200), ofRandom(200), ofRandom(200));
-		int r =ofRandom(60);
-		ofxIntPoint size		= ofVec3f(r/10, r, r/10);
-		
-		ofxIntBox box(position, size);
-		vector<ofxPoint> c = getVoxelsinBox(box);
-		
-		for(int i=0; i<c.size(); i++){
-			setColor(c[i].x, c[i].y, c[i].z, newColor);
-		}
-	}
-}
-
-
-//--------------------------------------------------------------
-void ofxVolume::redraw(slice vP, int depth)
-{
-	// try clamp the value like this out = MIN(h, MAX(in, 0));
-	if(vP==CORONAL)
-	{
-		coronalS = depth;	// maybe talairch will need unclamped position??
-		if(depth>=0 && depth<h)
-		{
-			insideCoronal=true;
-			redrawCoronal();
-		}else{
-			insideCoronal=false;
-//			coronalS = MIN(h, MAX(depth, 0));
-		}
-	}
-	else if(vP==SAGITTAL)
-	{
-		sagittalS = depth;
-		if(depth>=0 && depth<w)
-		{
-			insideSagittal=true;
-			redrawSagittal();
-		}else{
-			insideSagittal=false;
-//			sagittalS = MIN(w, MAX(depth, 0));
-		}
-	}
-	else if (vP==AXIAL)
-	{
-		axialS = depth;
-		if(depth>=0 && depth<d)
-		{
-			insideAxial=true;
-			redrawAxial();
-		}else{
-			insideAxial=false;
-//			axialS = MIN(d, MAX(depth, 0));
-		}
-	}
-}
-
-//--------------------------------------------------------------
-void ofxVolume::draw(slice vP)
-{
-	drawBox();
-	if(vP==CORONAL)
-	{
-		if(insideCoronal) coronal.draw(halfW, halfD);	// otherwise set to black (do not draw).
-	}
-	else if(vP==SAGITTAL)
-	{
-		if(insideSagittal) sagittal.draw(halfH, halfD);	// otherwise set to black (do not draw).
-	}
-	else if(vP==AXIAL)
-	{
-		if(insideAxial) axial.draw(halfW, halfH);		// otherwise set to black (do not draw).
-	}
-}
-//--------------------------------------------------------------
-void ofxVolume::drawBox()
-{
-	// Draw Box
-	ofPushStyle();
-	ofSetColor(0);
-	ofRect(0, 0, boxW, boxH);
-	ofPopStyle();
-	ofSetColor(255);
-}
-
-//--------------------------------------------------------------
-void ofxVolume::redrawCoronal()
-{
-	for(int z=0; z<d; z++)
-	{
-		for(int y=0; y<h; y++)
-		{
-			if (y==coronalS){
-				for(int x=0; x<w; x++)
-				{
-					int line = y*w;
-					int page = z*w*h;
-					int i = x + line + page;					// the position at the pixel array
-					coronalPixels[x+(z*w)] = getVoxels()[i];	// get the correct voxel and put it to the pixel array
-				}
-			}
-		}
-	}
-	
-	//draw image
-	coronal.setFromPixels(coronalPixels.getPixels(), w, d, OF_IMAGE_GRAYSCALE);
-	coronal.mirror(true, false);
-}
-
-//--------------------------------------------------------------
-void ofxVolume::redrawSagittal()
-{
-	for(int z=0; z<d; z++)
-    {
-		for(int y=0; y<h; y++)
-        {
-			for(int x=0; x<w; x++)
-			{
-				if (x==sagittalS){
-					int line = y*w;
-					int page = z*w*h;
-					int i = x + line + page;					// the position at the pixel array
-					sagittalPixels[z+(y*d)] = getVoxels()[i];	// get the correct voxel and put it to the pixel array
-				}
-			}
-		}
-    }
-	
-	//draw image
-	sagittal.setFromPixels(sagittalPixels.getPixels(), d, h, OF_IMAGE_GRAYSCALE);
-	sagittal.rotate90(3);
-}
-
-//--------------------------------------------------------------
-void ofxVolume::redrawAxial()
-{
-	for(int z=0; z<d; z++)
-    {
-		if (z==axialS){
-			for(int y=0; y<h; y++)
-			{
-				for(int x=0; x<w; x++)
-				{
-					int line = y*w;
-					int page = z*w*h;
-					int i = x + line + page;			// the position at the pixel array
-					axialPixels[x+line] = getVoxels()[i];	// get the correct voxel and put it to the pixel array
-				}
-			}
-		}
-    }
-	
-	//draw image
-	axial.setFromPixels(axialPixels.getPixels(), w, h, OF_IMAGE_GRAYSCALE);
-}
-
-/*
-//--------------------------------------------------------------
-ofxPoint ofxVolume::getSize(){
-	return this->size;
-}
-//--------------------------------------------------------------
-ofxPoint ofxVolume::getPos(){
-	return this->position;
-}
-*/
-/*
- //--------------------------------------------------------------
- template<typename PixelType>
- PixelType* ofxVolume::getVoxels(){
- return voxels.getVoxels();
- }
-
-*/
-
-//--------------------------------------------------------------
-void ofxVolume::selectVoxels(ofxBox& box){
-//	selectedVoxels.pushBack(getVoxelsinBox(box));
-}
-//--------------------------------------------------------------
-void ofxVolume::selectVoxels(vector <ofxIntBox>& boxes){
-	
-	selectedVoxels.clear();
-	
-	for(int i=0; i<boxes.size(); i++){
-//		cout << "size = "<< boxes[i].size<<endl;
-//		getVoxelsinRadius(_coord[i], _radius[i]);
-		vector <ofxPoint> outputVoxels;
-		outputVoxels = getVoxelsinBox(boxes[i]);
-	}
-}
-//--------------------------------------------------------------
-vector <ofxPoint> ofxVolume::getVoxelsinBox(ofxIntBox& box){
-	
-	vector <ofxPoint> outputVoxels;
-	ofxIntPoint pointer	(0);
-	ofxIntBox bounds(pointer,(ofxIntPoint)getSize());
-
-	for(int z=0; z<box.d; z++){
-		for(int y=0; y<box.h; y++){
-			for(int x=0; x< box.w; x++){
-				pointer.set(x, y, z);
-				pointer+=box.position;
-
-				if (bounds.inside(pointer)){
-					outputVoxels.push_back(pointer);
-//					ofLogVerbose("ofxVolume") << "voxelCoord= " << pointer;
-				}else{
-//					ofLogVerbose("ofxVolume") << "OUTSIDE" << pointer;
-				}
-			}
-		}
-	}
-	return outputVoxels;
-}
-
-vector <ofxPoint> ofxVolume::getVoxelsinRadius(ofxPoint& _coord, float& _radius){
-
-	vector <ofxPoint> outputVoxels;
-	outputVoxels.push_back(_coord);
-	
-	ofxPoint coord	(0);
-	int row			=0;
-	int page		=0;
-	int index		=0;
-
-	for(int z=0; z<d; z++){
-		coord.z=z;
-		
-		if (z==_coord.z){
-			for(int y=0; y<h; y++){
-				coord.y=y;
-				
-				if (y==_coord.y) {
-					for(int x=0; x<w; x++){
-						coord.x=x;
-						
-						if (x==_coord.x){
-							row = y*w;
-							page = z*w*h;
-							index = x + row + page;
-							
-							coord= ofxPoint(x,y,z);
-//							value= voxels[index];
-							ofLogVerbose("ofxVolume") << "voxelCoord= " << coord;
-//							ofLogVerbose("ofxVolume") << "voxelVal= " << value;
-							//return true;
-						}
-					}
-				}
-			}
-		}
-	}
-	
-}
-
-/*
- size of box is symetrical for now
- so, size (1,2,3)=
- 
- x= -1 to 1;
- y= -2 to 2;
- z= -3 to 3;
- 
- */
-
-
-
-bool ofxVolume::inside(ofxPoint _coord){
-	
-	if (_coord.x<0) return false;
-	if (_coord.y<0) return false;
-	if (_coord.z<0) return false;
-	
-	if (_coord.x>w)	return false;
-	if (_coord.y>h) return false;
-	if (_coord.z>d)	return false;
-	
+	ofLogNotice("ofxVolume::loadVolume") << "Volume loaded.";
 	return true;
 }
+//----------------------------------------------------
+bool ofLoadVolume(ofxVoxels & voxls, string folder) {
+	return loadVolume(voxls,folder);
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxFloatVoxels & voxls, string folder){
+	return loadVolume(voxls,folder);
+}
+//----------------------------------------------------------------
+bool ofLoadVolume(ofxTexture3d & tex, string folder){
+	ofxVoxels voxels;
+	bool loaded = ofLoadVolume(voxels,folder);
+	if(loaded){
+		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+		tex.loadData(voxels);
+	}
+	return loaded;
+}
 
+/*
+// TODO: nothing really smart here for now. buffer probably does not make much sense for volumes.
+//----------------------------------------------------
+template<typename PixelType>
+static bool loadVolume(ofxVoxels_<PixelType> & voxls, const ofBuffer & buffer){
+loadVolume(voxls, buffer.getText());
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxShortVoxels & voxls, string path){
+	return loadVolume(voxls,path);
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxVoxels & voxls, const ofBuffer & buffer) {
+	return loadVolume(voxls,buffer);
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxFloatVoxels & voxls, const ofBuffer & buffer){
+	return loadVolume(voxls,buffer);
+}
+//----------------------------------------------------
+bool ofLoadVolume(ofxShortVoxels & voxls, const ofBuffer & buffer){
+	return loadVolume(voxls,buffer);
+}
+//----------------------------------------------------------------
+bool ofLoadVolume(ofxTexture3d & tex, const ofBuffer & buffer){
+	ofxVoxels voxels;
+	bool loaded = ofLoadVolume(voxels,buffer);
+	if(loaded){
+		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+		tex.loadData(voxels);
+	}
+	return loaded;
+}
+*/
 
-void ofxVolume::destroy(){
+//----------------------------------------------------------------
+template<typename PixelType>
+static void saveVolume(ofxVoxels_<PixelType> & voxls,
+					   string fileName = "",
+					   string folderName = "",
+					   ofImageQualityType qualityLevel = OF_IMAGE_QUALITY_BEST){
 
+	ofxImageSequence imageSequence;
+	imageSequence.setupSave(fileName, folderName);
 	
+	//ofLogVerbose("ofxVolume::saveVolume")<< "writing " << voxls.getDepth()<< " images";
+	// copy images to volume
+	for(int z=0; z<voxls.getDepth(); z++)
+	{
+		//ofLogVerbose("ofxVolume::saveVolume")<< "image " << z<< " in q";
+		imageSequence.saveImage(voxls.getSlice(FRONT, z));
+	}
+
+	imageSequence.startThread(true, true);
+
+	while(imageSequence.isThreadRunning()){
+		//ofLogVerbose("ofxVolume::saveVolume")<< "waitihg for thread to finish.\n" ;
+	}
+	
+	//imageSequence.waitForThread();
+	ofLogNotice("ofxVolume::saveVolume")<< "Volume saved.";
+}
+
+//----------------------------------------------------------------
+void ofSaveVolume(ofxVoxels & voxls, string fileName, string folderName, ofImageQualityType qualityLevel){
+	saveVolume(voxls,fileName,folderName,qualityLevel);
+}
+
+//----------------------------------------------------------------
+void ofSaveVolume(ofxFloatVoxels & voxls, string fileName, string folderName, ofImageQualityType qualityLevel) {
+	saveVolume(voxls,fileName,folderName,qualityLevel);
+}
+
+//----------------------------------------------------------------
+void ofSaveVolume(ofxShortVoxels & voxls, string fileName, string folderName, ofImageQualityType qualityLevel) {
+	saveVolume(voxls,fileName,folderName,qualityLevel);
+}
+/*
+// TODO: nothing really smart here for now. buffer probably does not make much sense for volumes.
+//----------------------------------------------------------------
+template<typename PixelType>
+static void saveVolume(ofxVoxels_<PixelType> & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
+	saveVolume(voxls, buffer.getText(), qualityLevel);
+}
+//----------------------------------------------------------------
+void ofSaveVolume(ofxVoxels & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
+	saveVolume(voxls,buffer,format,qualityLevel);
+}
+//----------------------------------------------------------------
+void ofSaveVolume(ofxFloatVoxels & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
+	saveVolume(voxls,buffer,format,qualityLevel);
+}
+//----------------------------------------------------------------
+void ofSaveVolume(ofxShortVoxels & voxls, ofBuffer & buffer, ofImageFormat format, ofImageQualityType qualityLevel) {
+	saveVolume(voxls,buffer,format,qualityLevel);
+}
+*/
+
+//-------------------------------------------------------------
+//  implementation
+
+//----------------------------------------------------------
+template<typename PixelType>
+ofxVolume_<PixelType>::ofxVolume_(){
+
+	width						= 0;
+	height						= 0;
+	depth						= 0;
+	bpp							= 0;
+	type						= OF_IMAGE_UNDEFINED;
+	bUseTexture					= true;		// the default is, yes, use a texture
+
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+ofxVolume_<PixelType>::ofxVolume_(const ofxVoxels_<PixelType> & voxls){
+	width						= 0;
+	height						= 0;
+	depth						= 0;
+	bpp							= 0;
+	type						= OF_IMAGE_UNDEFINED;
+	bUseTexture					= true;		// the default is, yes, use a texture
+
+	setFromVoxels(voxls);
+}
+
+template<typename PixelType>
+ofxVolume_<PixelType>::ofxVolume_(const ofDirectory & folder){
+	width						= 0;
+	height						= 0;
+	depth						= 0;
+	bpp							= 0;
+	type						= OF_IMAGE_UNDEFINED;
+	bUseTexture					= true;		// the default is, yes, use a texture
+
+	loadVolume(folder);
+}
+
+template<typename PixelType>
+ofxVolume_<PixelType>::ofxVolume_(const string & filename){
+	width						= 0;
+	height						= 0;
+	depth						= 0;
+	bpp							= 0;
+	type						= OF_IMAGE_UNDEFINED;
+	bUseTexture					= true;		// the default is, yes, use a texture
+
+	loadVolume(filename);
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+ofxVolume_<PixelType>& ofxVolume_<PixelType>::operator=(const ofxVolume_<PixelType>& mom) {
+	if(&mom==this) return *this;
+	clone(mom);
+	update();
+	return *this;
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+ofxVolume_<PixelType>::ofxVolume_(const ofxVolume_<PixelType>& mom) {
+#if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
+	registerImage(this);
+#endif
+	clear();
+	clone(mom);
+	update();
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+ofxVolume_<PixelType>::~ofxVolume_(){
+	clear();
 }
 
 
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::reloadTexture(){
+	if (voxels.isAllocated() && bUseTexture){
+		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+		tex.loadData(voxels);
+	}
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+bool ofxVolume_<PixelType>::loadVolume(const ofDirectory & folder){
+	return loadVolume(folder.getAbsolutePath());
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+bool ofxVolume_<PixelType>::loadVolume(string fileName){
+
+#if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
+	registerImage(this);
+#endif
+	bool bLoadedOk = ofLoadVolume(voxels, fileName);
+	if (!bLoadedOk) {
+		ofLogError("ofxVolume") << "loadVolume(): couldn't load image from \"" << fileName << "\"";
+		clear();
+		return false;
+	}
+	if (bLoadedOk && voxels.isAllocated() && bUseTexture){
+		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+		if(ofGetGLProgrammableRenderer() && (voxels.getNumChannels()==1 || voxels.getNumChannels()==2)){
+			tex.setRGToRGBASwizzles(true);
+		}
+	}
+	update();
+	return bLoadedOk;
+}
+
+/*
+template<typename PixelType>
+bool ofxVolume_<PixelType>::loadVolume(const ofBuffer & buffer){
+
+#if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
+	registerImage(this);
+#endif
+	bool bLoadedOk = ofLoadVolume(voxels, buffer);
+	if (!bLoadedOk) {
+		ofLogError("ofImage") << "loadVolume(): couldn't load image from ofBuffer";
+		clear();
+		return false;
+	}
+	if (bLoadedOk && voxels.isAllocated() && bUseTexture){
+		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+		if(ofGetGLProgrammableRenderer() && (voxels.getNumChannels()==1 || voxels.getNumChannels()==2)){
+			tex.setRGToRGBASwizzles(true);
+		}
+	}
+	update();
+	return bLoadedOk;
+ 
+}
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::saveVolume(ofBuffer & buffer, ofImageQualityType qualityLevel){
+ ofSaveVolume(voxels, buffer, qualityLevel);
+}
+*/
+
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::saveVolume(string fileName, string folderName, ofImageQualityType qualityLevel){
+	ofSaveVolume(voxels,fileName,folderName,qualityLevel);
+}
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::saveVolume(const ofDirectory & folder, ofImageQualityType qualityLevel){
+	ofSaveVolume(voxels,"",folder.getAbsolutePath(),qualityLevel);
+}
 
 
+// we could cap these values - but it might be more useful
+// to be able to set anchor points outside the image
+/*
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::setAnchorPercent(float xPct, float yPct){
+    if (bUseTexture)tex.setAnchorPercent(xPct, yPct);
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::setAnchorPoint(float x, float y){
+    if (bUseTexture)tex.setAnchorPoint(x, y, z);
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::resetAnchor(){
+   	if (bUseTexture)tex.resetAnchor();
+}
 
 
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::draw(float x, float y){
+	draw(x,y,0,getWidth(),getHeight());
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::draw(float x, float y, float z){
+	draw(x,y,z,getWidth(),getHeight());
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::draw(float x, float y, float w, float h){
+	draw(x,y,0,w,h);
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::draw(float x, float y, float z, float w, float h){
+	drawSubsection(x,y,z,w,h,0,0,getWidth(),getHeight());
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::drawSubsection(float x, float y, float w, float h, float sx, float sy){
+	drawSubsection(x,y,0,w,h,sx,sy,w,h);
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::drawSubsection(float x, float y, float w, float h, float sx, float sy, float _sw, float _sh){
+	drawSubsection(x,y,0,w,h,sx,sy,_sw,_sh);
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::drawSubsection(float x, float y, float z, float w, float h, float sx, float sy){
+	drawSubsection(x,y,z,w,h,sx,sy,w,h);
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::drawSubsection(float x, float y, float z, float w, float h, float sx, float sy, float sw, float sh){
+	ofGetCurrentRenderer()->draw(*this,x,y,z,w,h,sx,sy,sw,sh);
+}
+*/
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::allocate(int w, int h, int d, ofImageType newType){
+	
+	if (width == w && height == h && depth == d && newType == type){
+		return;
+	}
+#if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
+	registerImage(this);
+#endif
+	voxels.allocate(w, h, d, newType);
+
+	// take care of texture allocation --
+	if (voxels.isAllocated() && bUseTexture){
+		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+		if(ofGetGLProgrammableRenderer() && (voxels.getNumChannels()==1 || voxels.getNumChannels()==2)){
+			tex.setRGToRGBASwizzles(true);
+		}
+	}
+	
+	width	= voxels.getWidth();
+	height	= voxels.getHeight();
+	depth	= voxels.getDepth();
+	bpp		= voxels.getBitsPerVoxel();
+	type	= voxels.getImageType();
+}
 
 
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::clear(){
+#if defined(TARGET_ANDROID) || defined(TARGET_OF_IOS)
+	unregisterImage(this);
+#endif
+	voxels.clear();
+	if(bUseTexture)	tex.clear();
+
+	width					= 0;
+	height					= 0;
+	bpp						= 0;
+	type 					= OF_IMAGE_UNDEFINED;
+	bUseTexture 			= true;		// the default is, yes, use a texture
+}
+
+//------------------------------------
+template<typename PixelType>
+PixelType * ofxVolume_<PixelType>::getVoxels(){
+	return voxels.getVoxels();
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+ofxVoxels_<PixelType> & ofxVolume_<PixelType>::getVoxelsRef(){
+	return voxels;
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+ofxVolume_<PixelType>::operator ofxVoxels_<PixelType>&(){
+	return voxels;
+}
+
+//------------------------------------
+// for getting a reference to the texture
+template<typename PixelType>
+ofxTexture3d & ofxVolume_<PixelType>::getTextureReference(){
+/*
+	// it should be the responsibility of anything using getTextureReference()
+	// to check that it's allocated
+	if(!tex.bAllocated() ){
+		ofLogWarning("ofImage") << "getTextureReference(): texture is not allocated";
+	}
+	*/
+	return tex;
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::bind(){
+	if (bUseTexture && tex.bAllocated())
+		tex.bind();
+}
+
+//----------------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::unbind(){
+	if (bUseTexture && tex.bAllocated())
+		tex.unbind();
+}
+
+//------------------------------------
+template<typename PixelType>
+ofColor_<PixelType> ofxVolume_<PixelType>::getColor(int x, int y, int z) const {
+	return voxels.getColor(x, y, z);
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::setColor(int x, int y, int z, const ofColor_<PixelType>& color) {
+	voxels.setColor(x, y, z, color);
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::setColor(int index, const ofColor_<PixelType>& color) {
+	voxels.setColor(index, color);
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::setColor(const ofColor_<PixelType>& color) {
+	voxels.setColor(color);
+}
+
+//------------------------------------
+template<typename PixelType>
+void  ofxVolume_<PixelType>::setFromVoxels(const PixelType * newPixels, int w, int h, int d, ofImageType newType, bool bOrderIsRGB){
+
+	allocate(w, h, d, newType);
+	voxels.setFromVoxels(newPixels,w,h,d,newType);
+
+	if (!bOrderIsRGB && sizeof(PixelType) == 1){
+		voxels.swapRgb();
+	}
+
+	update();
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::setFromVoxels(const ofxVoxels_<PixelType> & voxels){
+	setFromVoxels(voxels.getVoxels(),voxels.getWidth(),voxels.getHeight(),voxels.getDepth(),voxels.getImageType());
+}
+
+//------------------------------------
+template<typename PixelType>
+ofxVolume_<PixelType> & ofxVolume_<PixelType>::operator=(ofxVoxels_<PixelType> & voxels){
+	setFromVoxels(voxels);
+	return *this;
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::update(){
+	width = voxels.getWidth();
+	height = voxels.getHeight();
+	depth = voxels.getDepth();
+	bpp = voxels.getBitsPerVoxel();
+	type = voxels.getImageType();
+	if (voxels.isAllocated() && bUseTexture){
+		int glTypeInternal = voxels.getGlFormat();
+		if(!tex.isAllocated() || tex.getWidth() != width || tex.getHeight() != height || tex.getTextureData().glTypeInternal != glTypeInternal){
+			tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), glTypeInternal);
+			if(ofGetGLProgrammableRenderer() && (voxels.getNumChannels()==1 || voxels.getNumChannels()==2)){
+				tex.setRGToRGBASwizzles(true);
+			}
+		}
+		tex.loadData(voxels);
+	}
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::setUseTexture(bool bUse){
+	bUseTexture = bUse;
+}
+
+//------------------------------------
+template<typename PixelType>
+bool ofxVolume_<PixelType>::isUsingTexture(){
+	return bUseTexture;
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::grabScreen(int _x, int _y){
+
+	// just for fun!
+	ofImage_<PixelType> screen;
+	screen.setImageType(voxels.getImageType());
+	screen.grabScreen(_x, _y, width, height);
+	voxels.copyFrontSliceFrom(screen.getPixelsRef(),(int)ofRandom(depth));
+	update();
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::setImageType(ofImageType newType){
+	changeTypeOfPixels(voxels, newType);
+	update();
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::resize(int newWidth, int newHeight){
+	if(newWidth == width && newHeight == height) return;
+
+	resizePixels(voxels, newWidth, newHeight);
+
+	if (bUseTexture){
+		tex.clear();
+		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+	}
+
+	update();
+}
 
 
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::crop(int x, int y, int z, int w, int h, int d){
+	w = ofClamp(w,1,getWidth());
+	h = ofClamp(h,1,getHeight());
+
+	voxels.crop(x,y,z,w,h,d);
+	update();
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::cropFrom(ofxVolume_<PixelType> & otherImage, int x, int y, int z, int w, int h, int d){
+	w = ofClamp(w,1,otherImage.getWidth());
+	h = ofClamp(h,1,otherImage.getHeight());
+
+	int myOldWidth = voxels.getWidth();
+	int myOldHeight = voxels.getHeight();
+	int myOldDepth = voxels.getDepth();
+	
+	otherImage.voxels.cropTo(voxels, x, y, z, w, h, d);
+
+	if (myOldWidth  != voxels.getWidth() ||
+		myOldHeight != voxels.getHeight() ||
+		myOldDepth != voxels.getDepth()){
+
+		if (bUseTexture){
+			tex.clear();
+			tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+			if(ofGetGLProgrammableRenderer() && (voxels.getNumChannels()==1 || voxels.getNumChannels()==2)){
+				tex.setRGToRGBASwizzles(true);
+			}
+		}
+	}
+
+	update();
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::rotate90(int nRotations){
+	int myOldWidth = voxels.getWidth();
+	int myOldHeight = voxels.getHeight();
+	int myOldDepth = voxels.getDepth();
+	voxels.rotate90(nRotations);
+	if (myOldWidth  != voxels.getWidth() ||
+		myOldHeight != voxels.getHeight() ||
+		myOldDepth != voxels.getDepth()){
+		if (bUseTexture){
+			tex.clear();
+			tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+			if(ofGetGLProgrammableRenderer() && (voxels.getNumChannels()==1 || voxels.getNumChannels()==2)){
+				tex.setRGToRGBASwizzles(true);
+			}
+		}
+	}
+	update();
+}
+
+//------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::mirror(bool _width, bool _height, bool _depth){
+	voxels.mirror( _width, _height, _depth);
+	update();
+}
 
 
+/*
+//----------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::resizePixels(ofxVoxels_<PixelType> &voxls, int newWidth, int newHeight){
+
+	FIBITMAP * bmp					= getBmpFromPixels(voxls);
+	FIBITMAP * convertedBmp			= NULL;
+
+	convertedBmp = FreeImage_Rescale(bmp, newWidth, newHeight, FILTER_BICUBIC);
+	putBmpIntoPixels(convertedBmp, voxls, false);
+
+	if (bmp != NULL)				FreeImage_Unload(bmp);
+	if (convertedBmp != NULL)		FreeImage_Unload(convertedBmp);
+}
+
+*/
+
+//----------------------------------------------------
+template<typename PixelType>
+void ofxVolume_<PixelType>::changeTypeOfPixels(ofxVoxels_<PixelType> &voxls, ofImageType newType){
+	int oldType = voxls.getImageType();
+		
+	if (oldType == newType) {
+		return; // no need to reallocate
+	}
+
+	
+	voxels.setImageType(newType);
+	
+	if(bUseTexture){
+		update();
+	}
+	
+/*
+	FIBITMAP * bmp = getBmpFromPixels(voxls);
+	FIBITMAP * convertedBmp = NULL;
+	
+	switch (newType){
+		case OF_IMAGE_GRAYSCALE:
+			convertedBmp = FreeImage_ConvertToGreyscale(bmp);
+			break;
+		case OF_IMAGE_COLOR:
+			convertedBmp = FreeImage_ConvertTo24Bits(bmp);
+			break;
+		case OF_IMAGE_COLOR_ALPHA:
+			convertedBmp = FreeImage_ConvertTo32Bits(bmp);
+			break;
+		default:
+			ofLogError("ofImage") << "changeTypeOfPixels(): unknown image type: " << newType;
+			break;
+	}
+	
+	putBmpIntoPixels(convertedBmp, voxls, false);
+
+	if (bmp != NULL) {
+		FreeImage_Unload(bmp);
+	}
+	if (convertedBmp != NULL) {
+		FreeImage_Unload(convertedBmp);
+	}
+
+	if(bUseTexture){
+		// always reallocate the texture. if ofxTexture3d doesn't need reallocation,
+		// it doesn't have to. but it needs to change the internal format.
+		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
+		if(ofGetGLProgrammableRenderer() && (voxels.getNumChannels()==1 || voxels.getNumChannels()==2)){
+			tex.setRGToRGBASwizzles(true);
+		}
+	}
+	 */
+}
 
 
+//----------------------------------------------------------
+template<typename PixelType>
+int ofxVolume_<PixelType>::getWidth() const{
+	return width;
+}
+//----------------------------------------------------------
+template<typename PixelType>
+int ofxVolume_<PixelType>::getHeight() const{
+	return height;
+}
+//----------------------------------------------------------
+template<typename PixelType>
+int ofxVolume_<PixelType>::getDepth() const{
+	return depth;
+}
+//----------------------------------------------------------
+template<typename PixelType>
+ofxIntPoint ofxVolume_<PixelType>::getSize() const{
+	return ofxPoint(width, height, depth);
+}
+
+/*
+//----------------------------------------------------------
+// Sosolimited: texture compression
+// call this function before you call loadVolume()
+template<typename PixelType>
+void ofxVolume_<PixelType>::setCompression(ofTexCompression compression)
+{
+	if(bUseTexture){
+		tex.setCompression( compression );
+	}
+}
+*/
+
+template class ofxVolume_<unsigned char>;
+template class ofxVolume_<float>;
+template class ofxVolume_<unsigned short>;
 
 
