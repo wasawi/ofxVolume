@@ -50,7 +50,7 @@ public:
 	template<typename SrcType>
 	ofxVoxels_<PixelType>& operator=(const ofxVoxels_<SrcType> & mom);
 
-	void allocate(ofxBox box, int channels);
+	void allocate(ofxIntPoint box, int channels);
 	void allocate(ofVec3f size, int channels);
 	void allocate(ofVec3f size, ofPixelFormat type);
 	void allocate(int w, int h, int d, int channels);
@@ -90,7 +90,8 @@ public:
 	void setColor(int x, int y, int z, const ofColor_<PixelType>& color);
 	void setColor(int index, const ofColor_<PixelType>& color);
 	void setColor(const ofColor_<PixelType>& color);
-
+	void setNoise(const ofVec3f noise);
+	
 	const PixelType& operator[](int pos) const;
 	PixelType& operator[](int pos);
 

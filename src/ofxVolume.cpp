@@ -474,6 +474,11 @@ void ofxVolume_<PixelType>::drawSubsection(float x, float y, float z, float w, f
 */
 //------------------------------------
 template<typename PixelType>
+void ofxVolume_<PixelType>::allocate(ofxIntPoint size, ofImageType newType){
+	allocate(size.x, size.y, size.z, newType);
+}
+//------------------------------------
+template<typename PixelType>
 void ofxVolume_<PixelType>::allocate(int w, int h, int d, ofImageType newType){
 	
 	if (width == w && height == h && depth == d && newType == type){

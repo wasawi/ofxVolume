@@ -63,6 +63,7 @@ class ofxVolume_{// : public ofBaseImage_<PixelType>{
 		ofxVolume_(const string & filename);
 
 		// allocation / deallocation routines
+		void 				allocate(ofxIntPoint size, ofImageType type);
 		void 				allocate(int w, int h, int d, ofImageType type);
 		void 				clear();
 

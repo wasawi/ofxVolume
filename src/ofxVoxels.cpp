@@ -161,8 +161,8 @@ const PixelType * ofxVoxels_<PixelType>::getVoxels() const{
 }
 
 template<typename PixelType>
-void ofxVoxels_<PixelType>::allocate(ofxBox box, int _channels){
-	allocate(box.w, box.h, box.d, _channels);
+void ofxVoxels_<PixelType>::allocate(ofxIntPoint box, int _channels){
+	allocate(box.x, box.y, box.z, _channels);
 }
 template<typename PixelType>
 void ofxVoxels_<PixelType>::allocate(ofVec3f size, int _channels){
@@ -323,6 +323,36 @@ void ofxVoxels_<PixelType>::setColor(const ofColor_<PixelType>& color) {
 		}
 	}
 }
+
+template<typename PixelType>
+void ofxVoxels_<PixelType>::setNoise(const ofVec3f noise) {
+
+	ofVec3f n = noise;
+	cout << "noise = "<< n<<endl;
+	
+	for (int z = 0; z < depth; z++){
+		for (int y = 0; y < height; y++){
+			for (int x = 0; x < width; x++){
+			
+				ofColor color = ofNoise(x*n.x, y*n.y, z*n.z)*255;
+				int voxl = (x + (y*width) + z*width*height);
+				
+				for (int l = 0; l < channels; l++){
+					voxels[voxl * channels + l] = color[l];
+				}
+				
+			}
+		}
+	}
+	/*
+	while(i < getTotalSize()) {
+		for(int j = 0; j < channels; j++) {
+			voxels[i++] = color[j];
+		}
+	}
+	 */
+}
+
 
 template<typename PixelType>
 PixelType & ofxVoxels_<PixelType>::operator[](int pos){
