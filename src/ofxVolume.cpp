@@ -14,40 +14,40 @@
 // all the textures when the context is created again.
 // keeping a pointer to all the images we can tell them to reload from a static method
 static set<ofImage *> & all_images(){
-	static set<ofImage *> * images = new set<ofImage *>;
+	static set<ofxVolume *> * images = new set<ofxVolume *>;
 	return *images;
 }
-static set<ofFloatImage *> & all_float_images(){
-	static set<ofFloatImage *> * images = new set<ofFloatImage *>;
-	return *images;
-}
-
-static set<ofShortImage *> & all_short_images(){
-	static set<ofShortImage *> * images = new set<ofShortImage *>;
+static set<ofxFloatVolume *> & all_float_images(){
+	static set<ofxFloatVolume *> * images = new set<ofxFloatVolume *>;
 	return *images;
 }
 
-static void registerImage(ofImage * img){
+static set<ofxShortVolume *> & all_short_images(){
+	static set<ofxShortVolume *> * images = new set<ofxShortVolume *>;
+	return *images;
+}
+
+static void registerImage(ofxVolume * img){
 	all_images().insert(img);
 }
 
-static void registerImage(ofFloatImage * img){
+static void registerImage(ofxFloatVolume * img){
 	all_float_images().insert(img);
 }
 
-static void registerImage(ofShortImage * img){
+static void registerImage(ofxShortVolume * img){
 	all_short_images().insert(img);
 }
 
-static void unregisterImage(ofImage * img){
+static void unregisterImage(ofxVolume * img){
 	all_images().erase(img);
 }
 
-static void unregisterImage(ofFloatImage * img){
+static void unregisterImage(ofxFloatVolume * img){
 	all_float_images().erase(img);
 }
 
-static void unregisterImage(ofShortImage * img){
+static void unregisterImage(ofxShortVolume * img){
 	all_short_images().erase(img);
 }
 
