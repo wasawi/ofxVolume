@@ -784,44 +784,6 @@ void ofxVolume_<PixelType>::changeTypeOfPixels(ofxVoxels_<PixelType> &voxls, ofI
 	if(bUseTexture){
 		update();
 	}
-	
-/*
-	FIBITMAP * bmp = getBmpFromPixels(voxls);
-	FIBITMAP * convertedBmp = NULL;
-	
-	switch (newType){
-		case OF_IMAGE_GRAYSCALE:
-			convertedBmp = FreeImage_ConvertToGreyscale(bmp);
-			break;
-		case OF_IMAGE_COLOR:
-			convertedBmp = FreeImage_ConvertTo24Bits(bmp);
-			break;
-		case OF_IMAGE_COLOR_ALPHA:
-			convertedBmp = FreeImage_ConvertTo32Bits(bmp);
-			break;
-		default:
-			ofLogError("ofImage") << "changeTypeOfPixels(): unknown image type: " << newType;
-			break;
-	}
-	
-	putBmpIntoPixels(convertedBmp, voxls, false);
-
-	if (bmp != NULL) {
-		FreeImage_Unload(bmp);
-	}
-	if (convertedBmp != NULL) {
-		FreeImage_Unload(convertedBmp);
-	}
-
-	if(bUseTexture){
-		// always reallocate the texture. if ofxTexture3d doesn't need reallocation,
-		// it doesn't have to. but it needs to change the internal format.
-		tex.allocate(voxels.getWidth(), voxels.getHeight(), voxels.getDepth(), voxels.getGlFormat());
-		if(ofGetGLProgrammableRenderer() && (voxels.getNumChannels()==1 || voxels.getNumChannels()==2)){
-			tex.setRGToRGBASwizzles(true);
-		}
-	}
-	 */
 }
 
 
