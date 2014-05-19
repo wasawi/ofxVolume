@@ -1,12 +1,11 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxGifEncoder.h"
+
 #include "ofxVolumetrics.h"
-//#include "myVolume.h"
 #include "ofxVolume.h"
 #include "ofxPoint.h"
-//#include "ofxVolumeT.h"
+
 
 class ofApp : public ofBaseApp
 {
@@ -15,6 +14,7 @@ public:
     void setup();
     void update();
     void draw();
+	void exit();
 	void drawLabels();
 	void initVolume();
 	   
@@ -31,13 +31,7 @@ public:
 	// others
 	ofEasyCam cam;
     bool blabels;
-	
-    // GIF
-	ofxGifEncoder gifEncoder;
-	void onGifSaved(string & fileName);
-    void exit();
-	string		date;
-	
+		
 	// Volume Rendering
     ofxVolumetrics volumeRender;
 	ofxVolume	volume;
@@ -49,11 +43,6 @@ public:
 	float lastClipPlaneDepth;
 	float clipPlaneDepth, azimuth, elevation;
     bool linearFilter;
-
-	// test functions
-	void selectVoxels();
-	void paintRandomBoxes();
-
     
 };
 

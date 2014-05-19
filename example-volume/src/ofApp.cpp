@@ -9,12 +9,8 @@ void ofApp::setup()
 	ofSetupScreenOrtho();
 	ofBackground(40);
 	//	ofEnableBlendMode(OF_BLENDMODE_ADD);
-	
-	// GIF
-	gifEncoder.setup(ofGetWidth(), ofGetHeight(), 0.02, 255);
-    ofAddListener(ofxGifEncoder::OFX_GIF_SAVE_FINISHED, this, &ofApp::onGifSaved);
-	
-	// shader
+		
+	// shader params
 	FBOq		= 1;
 	Zq			= 1;
 	thresh		= 0;
@@ -41,21 +37,17 @@ void ofApp::setup()
 //--------------------------------------------------------------
 void ofApp::initVolume()
 {
-	// Init Volume
-	volume.loadVolume("volumes/Colin27T1_tight/");
-//	volume.loadVolume("2014-05-16-12-26-30-216");
-//	volume.setImageType(OF_IMAGE_COLOR_ALPHA);
-//	volume.loadImageSequence("volumes/talairach_nii/");
+    // Init Volume
+    ofxIntPoint size(100,100,100);
+	volume.allocate(size, OF_IMAGE_GRAYSCALE);
+//	volume.allocate(size, OF_IMAGE_COLOR_ALPHA);
 
-//	volume.loadAsRGBA("volumes/Colin27T1_tight/");
-//	volume.loadColorPow2("volumes/Colin27T1_tight/");
+	// load volume
+//	volume.loadVolume("volumes/Colin27T1_tight/");
 
-//	bPow2	= volume.getVoxelsRef().isPow2();
-//	format	= volume.getVoxelsRef().getGlFormat();
-	
 	// Init Volume Rendering
-//    volumeRender.setup(&volume, ofVec3f(1,1,1), bPow2, format);
     volumeRender.setup(&volume);
+//    volumeRender.setup(&volume, ofVec3f(1,1,1), bPow2, format);
 	volumeRender.setRenderSettings(FBOq, Zq, density, thresh);
 	volumeRender.setDithering(dithering);
 	volumeRender.setClipDepth(clipPlaneDepth);
@@ -84,15 +76,17 @@ void ofApp::keyPressed(int key)
     switch(key)
     {
 		case 'w':
-			selectVoxels();
+			//			volume.mirror(false, true, false);
+			//			volume.setImageType(OF_IMAGE_COLOR_ALPHA);
+			//			volume.grabScreen(ofGetMouseX(), ofGetMouseY());
+			//			volume.setColor(ofColor::magenta);
+			//			volumeRender.setVolume(&volume);
+
 			break;
 		case ' ':
-			//			gifEncoder.toggleRecording();
             break;
         case 's':
-            cout << "Start saving..." << endl;
-//			date=ofGetTimestampString();
-//			gifEncoder.save(date+".gif");
+            cout << "Saving volume..." << endl;
 			volume.saveVolume("i_.png");
             break;
 		case 'h':
@@ -102,12 +96,15 @@ void ofApp::keyPressed(int key)
 			ofToggleFullscreen();
 			break;
 		case 'a':
-//			volume.mirror(false, true, false);
-//			volume.setImageType(OF_IMAGE_COLOR_ALPHA);
-			volume.grabScreen(ofGetMouseX(), ofGetMouseY());
-//			volume.setColor(ofColor::magenta);
-			volumeRender.setVolume(&volume);
 
+			volume.getVoxelsRef().setNoise(ofVec3f(
+												   (sin(ofGetFrameNum())*0.01),
+												   (sin(ofGetFrameNum())*0.01),
+												   (tan(ofGetFrameNum())*0.01)
+                                                   ));
+			volumeRender.setup(&volume);
+//            volumeRender.setVolume(&volume, bPow2, format);
+			
 			break;
 			
 		case 't':
@@ -234,8 +231,10 @@ void ofApp::dragEvent(ofDragInfo dragInfo)
 }
 
 //--------------------------------------------------------------
+void ofApp::update(){
+}
+//--------------------------------------------------------------
 void ofApp::exit(){
-    gifEncoder.exit();
 }
 
 //--------------------------------------------------------------
@@ -262,65 +261,3 @@ void ofApp::drawLabels()
 					   ,20,20);
 
 }
-
-//--------------------------------------------------------------
-void ofApp::selectVoxels()
-{
-/*	vector<ofxIntBox> boxes;
-	
-	ofxIntPoint position	= ofVec3f(ofRandom(100));
-	ofxIntPoint size		= ofVec3f(ofRandom(10));
-	
-	ofxIntBox box(position, size);
-	boxes.push_back(box);
-	
-	volume.selectVoxels(boxes);
-*/
-}
-//--------------------------------------------------------------
-void ofApp::paintRandomBoxes()
-{
-	/*
-	ofxIntPoint position	= ofVec3f(ofRandom(100));
-	ofxIntPoint size		= ofVec3f(ofRandom(10), ofRandom(5), ofRandom(5));
-	
-	ofxIntBox box(position, size);
-	vector<ofxPoint> c = volume.getVoxelsinBox(box);
-	cout << "c size= "<< c.size() << endl;
-	for(int i=0; i<c.size(); i++){
-		cout << "i= "<< i << endl;
-		ofxIntPoint p(c[i].x, c[i].y, c[i].z);
-		cout << "ip= "<< p << endl;
-		volume.setColor(p.x,p.y,p.z, ofColor::white);
-	}
-	volumeRender.setVolume(&volume, bPow2, format);
-	 */
-}
-
-
-
-//--------------------------------------------------------------
-void ofApp::update()
-{
-	//    ofSetWindowTitle(ofToString(ofGetFrameRate()));
-	//	gifEncoder.update();
-}
-
-//--------------------------------------------------------------
-void ofApp::onGifSaved(string &fileName) {
-    cout << "gif saved as " << fileName << endl;
-	gifEncoder.reset();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
