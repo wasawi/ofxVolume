@@ -1,36 +1,5 @@
 #include "ofxImageSequence.h"
 
-
-/*	bool setup(string prefix, int digits, string extension, int start) {
- loadFromFolder = false;
- curFrame = start;
- startFrame = start;
- fPrefix = prefix;
- fExt = extension;
- numDigits = digits;
- totalFrames = 0;
- setUseTexture(false);
- 
- initialized = loadImage(generateFullFilename());
- 
- if(!initialized){
- ofLogWarning() << "ofxImageSequence: unable to load inital image in the sequence: " << generateFullFilename();
- return false;
- }
- 
- ofFile testFile;
- while(testFile.open(generateFullFilename()))
- {
- totalFrames++;
- curFrame++;
- testFile.close();
- }
- testFile.close();
- curFrame = startFrame;
- return true;
- };
- */
-
 //----------------------------------------------------------
 // loader
 //----------------------------------------------------------

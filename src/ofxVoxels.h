@@ -6,7 +6,6 @@
 #include "ofColor.h"
 #include "ofMath.h"
 #include <limits>
-#include "ofxBox.h"
 #include "ofPixels.h"
 #include "ofXPoint.h"
 
