@@ -479,6 +479,30 @@ void ofxVolume_<PixelType>::allocate(ofxIntPoint size, ofImageType newType){
 }
 //------------------------------------
 template<typename PixelType>
+void ofxVolume_<PixelType>::allocate(int w, int h, int d, int channels){
+	ofImageType newType;
+	switch(channels) {
+		case 4:
+			allocate(w, h, d, GL_RGBA);
+			break;
+		case 3:
+			allocate(w, h, d, GL_RGB);
+			break;
+		case 2:
+			allocate(w, h, d, GL_LUMINANCE_ALPHA);
+			break;
+		case 1:
+			allocate(w, h, d, GL_LUMINANCE);
+			break;
+		default:
+			ofLogError("ofxVoxels")
+			<< "getGlFormat(): internal format not recognized, returning GL_RGBA";
+			allocate(w, h, d, GL_RGBA);
+			break;
+	}
+}
+//------------------------------------
+template<typename PixelType>
 void ofxVolume_<PixelType>::allocate(int w, int h, int d, ofImageType newType){
 	
 	if (width == w && height == h && depth == d && newType == type){

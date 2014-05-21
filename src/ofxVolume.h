@@ -64,6 +64,7 @@ class ofxVolume_{// : public ofBaseImage_<PixelType>{
 
 		// allocation / deallocation routines
 		void 				allocate(ofxIntPoint size, ofImageType type);
+		void 				allocate(int w, int h, int d, int channels);
 		void 				allocate(int w, int h, int d, ofImageType type);
 		void 				clear();
 
