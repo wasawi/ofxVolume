@@ -138,7 +138,7 @@ public:
 	bool copyBackSliceTo(ofPixels_<PixelType>& mom, int offset );
 	bool copyLeftSliceTo(ofPixels_<PixelType>& mom, int offset );
 	bool copyBottomSliceTo(ofPixels_<PixelType>& mom, int offset );
-	void copyPixelTo(ofPixels_<PixelType>& dst, int dstPix, int srcVox );
+	void copyPixelTo(ofPixels_<PixelType>& dst, int& dstPix, int& srcVox );
 	
 	// from pixels to voxels (import)
 	bool copyFrontSliceFrom(const ofPixels_<PixelType>& mom, int offset );
@@ -147,7 +147,7 @@ public:
 	bool copyBackSliceFrom(const ofPixels_<PixelType>& mom, int offset );
 	bool copyLeftSliceFrom(const ofPixels_<PixelType>& mom, int offset );
 	bool copyBottomSliceFrom(const ofPixels_<PixelType>& mom, int offset );
-	void copyPixelFrom(const ofPixels_<PixelType>& src, int srcPix, int dstVox );
+	void copyPixelFrom(const ofPixels_<PixelType>& src, int& srcPix, int& dstVox );
 
 	
 	//-mine

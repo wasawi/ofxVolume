@@ -1227,7 +1227,7 @@ bool ofxVoxels_<PixelType>::copyRightSliceTo(ofPixels_<PixelType>& dst, int offs
 			// cursor position at Volume
 			int voxl = (offset + (y*width) + z*area);
 			// cursor position at Image
-			int pixl = (z+ (y*width));
+			int pixl = (y+ (z*height));
 			
 			copyPixelTo(dst, pixl, voxl);
 		}
@@ -1283,7 +1283,7 @@ bool ofxVoxels_<PixelType>::copyLeftSliceTo(ofPixels_<PixelType>& dst, int offse
 			// cursor position at Volume
 			int voxl = (offset + (y*width) + ((depth-1)-z)*area);
 			// cursor position at Image
-			int pixl = (z+ (y*width));
+			int pixl = (y+ (z*height));
 			
 			copyPixelTo(dst, pixl, voxl);
 		}
@@ -1310,9 +1310,19 @@ bool ofxVoxels_<PixelType>::copyBottomSliceTo(ofPixels_<PixelType>& dst, int off
 }
 //-------------------------------------------------------------- OK? to test
 template<typename PixelType>
-inline void ofxVoxels_<PixelType>::copyPixelTo(ofPixels_<PixelType>& dst, int dstPix, int srcVox ){
+inline void ofxVoxels_<PixelType>::copyPixelTo(ofPixels_<PixelType>& dst, int& dstPix, int& srcVox ){
 	
 	for (int l = 0; l < channels; l++){
+		/*
+		cout
+		<< "l "<< l
+		<< ", channels " << channels
+		<< ", dsPix "<< dstPix
+		<< ", srcVox " << srcVox
+		<< ", get value at " << srcVox* channels + l
+		<< ", voxel value " << voxels[srcVox* channels + l]
+		<< endl;
+		*/
 		dst[dstPix* channels + l] = voxels[srcVox* channels + l];
 	}
 }
@@ -1409,7 +1419,7 @@ bool ofxVoxels_<PixelType>::copyRightSliceFrom(const ofPixels_<PixelType>& dst, 
 			// cursor position at Volume
 			int voxl = (offset + (y*width) + z*area);
 			// cursor position at Image
-			int pixl = (z+ (y*width));
+			int pixl = (y+ (z*height));
 			
 			copyPixelFrom(dst, pixl, voxl);
 		}
@@ -1465,7 +1475,7 @@ bool ofxVoxels_<PixelType>::copyLeftSliceFrom(const ofPixels_<PixelType>& dst, i
 			// cursor position at Volume
 			int voxl = (offset + (y*width) + ((depth-1)-z)*area);
 			// cursor position at Image
-			int pixl = (z+ (y*width));
+			int pixl = (y+ (z*height));
 			
 			copyPixelFrom(dst, pixl, voxl);
 		}
@@ -1492,7 +1502,7 @@ bool ofxVoxels_<PixelType>::copyBottomSliceFrom(const ofPixels_<PixelType>& dst,
 }
 //-------------------------------------------------------------- OK? to test
 template<typename PixelType>
-inline void ofxVoxels_<PixelType>::copyPixelFrom(const ofPixels_<PixelType>& src, int srcPix, int dstVox ){
+inline void ofxVoxels_<PixelType>::copyPixelFrom(const ofPixels_<PixelType>& src, int& srcPix, int& dstVox ){
 	
 	for (int l = 0; l < channels; l++){
 		voxels[dstVox* channels + l] = src[srcPix* channels + l];
