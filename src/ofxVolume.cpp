@@ -197,7 +197,7 @@ static void saveVolume(ofxVoxels_<PixelType> & voxls,
 		imageSequence.saveImage(voxls.getSlice(FRONT, z));
 	}
 
-	imageSequence.startThread(true, true);
+	imageSequence.startThread();
 
 	while(imageSequence.isThreadRunning()){
 		//ofLogVerbose("ofxVolume::saveVolume")<< "waitihg for thread to finish.\n" ;
